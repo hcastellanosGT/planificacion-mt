@@ -459,7 +459,7 @@ select{appearance:none;background-image:url('data:image/svg+xml;utf8,<svg xmlns=
 /* TABS */
 .tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:2px solid var(--linea);padding-bottom:0;}
 .tab{padding:9px 16px;font-size:13px;font-weight:600;color:var(--texto-suave);cursor:pointer;border-radius:8px 8px 0 0;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .15s;}
-.tab.active{color:var(--terracota-dark);border-bottom-color:var(--terracota);}
+.tab.active{color:#fff;background:var(--terracota);border-bottom-color:transparent;border-radius:8px;}
 .tab:hover:not(.active){color:var(--texto);}
 .tab-panel{display:none;}
 .tab-panel.active{display:block;}
@@ -656,9 +656,9 @@ table.det tr:hover td{background:#faf6ef;}
     </div></div>
     <div class="wrap">
       <!-- Tabs -->
-      <div style="display:flex;gap:4px;border-bottom:2px solid var(--linea);margin-bottom:16px;flex-wrap:wrap;">
-        <button class="tab active" id="tabDash" onclick="switchAnalisis('dash')">📋 Planificación actual</button>
-        <button class="tab" id="tabHist" onclick="switchAnalisis('hist')">📈 Historial</button>
+      <div class="card" style="padding:6px 8px;margin-bottom:16px;display:flex;gap:4px;flex-wrap:wrap;">
+        <button class="tab active" id="tabDash" onclick="switchAnalisis('dash')" style="border-radius:8px;border-bottom:none;padding:10px 18px;">📋 Planificación actual</button>
+        <button class="tab" id="tabHist" onclick="switchAnalisis('hist')" style="border-radius:8px;border-bottom:none;padding:10px 18px;">📈 Historial</button>
       </div>
       <!-- Panel semana actual -->
       <div id="panelDash">
