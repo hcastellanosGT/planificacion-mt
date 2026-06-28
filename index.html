@@ -751,6 +751,26 @@ table.det tr:hover td{background:#faf6ef;}
     </div>
   </div>
 <script>
+
+// ── BLOQUEO DOMINGO ──────────────────────────────────────────────────────────
+function esDomingo() {
+  return new Date().getDay() === 0;
+}
+
+function mostrarBloqueDomingo(contenedor) {
+  if (!contenedor) return;
+  contenedor.innerHTML = '';
+  const div = document.createElement('div');
+  div.style.cssText = 'text-align:center;padding:48px 24px;';
+  div.innerHTML = `
+    <div style="font-size:48px;margin-bottom:16px;">🔒</div>
+    <h2 style="font-size:20px;font-weight:700;margin:0 0 8px;color:var(--cana-900);">Sistema cerrado</h2>
+    <p style="font-size:14px;color:var(--texto-suave);margin:0;">El domingo es día de cierre.<br>
+    Regresa el <b>lunes</b> para empezar la programación de la siguiente semana.</p>
+  `;
+  contenedor.appendChild(div);
+}
+
 function switchAnalisis(tab) {
   const isDash = tab === 'dash';
   document.getElementById('panelDash').style.display = isDash ? '' : 'none';
@@ -798,10 +818,15 @@ function navTo(page){
   });
   closeSidebar();
   window.scrollTo(0,0);
-  // Al navegar a Análisis, cargar planificación automáticamente
-  if (page === 'analisis' && typeof actualizar === 'function') {
-    const dash = document.getElementById('dashContent');
-    if (dash && dash.style.display === 'none') actualizar();
+  // Al navegar a Análisis
+  if (page === 'analisis') {
+    if (esDomingo()) {
+      const wrap = document.querySelector('#page-analisis .wrap');
+      mostrarBloqueDomingo(wrap);
+    } else if (typeof actualizar === 'function') {
+      const dash = document.getElementById('dashContent');
+      if (dash && dash.style.display === 'none') actualizar();
+    }
   }
 }
 function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('open'); }
@@ -1382,6 +1407,11 @@ async function guardarEnLaNube_P() {
 // ─── TOAST ────────────────────────────────────────────────────────────────────
 // ── AUTO-SEMANA ──────────────────────────────────────────────────────────────
 function autoSeleccionarSemana() {
+  // Si es domingo, mostrar bloqueo inmediatamente
+  if (esDomingo()) {
+    mostrarBloqueDomingo(document.getElementById('bannerCierre'));
+    return;
+  }
   const hoy = new Date();
   const dow = hoy.getDay(); // 0=dom, 1=lun ... 6=sab
   // Próximo lunes: si hoy es domingo=1día, lunes=7días, martes-sábado=(8-dow)días
@@ -1675,6 +1705,14 @@ selR_E.addEventListener('change',()=>{ if(selR_E.value) cargarPlanificacion(selR
 
 // ── Cargar planificación ────────────────────────────────────────────
 async function cargarPlanificacion(nombre){
+  // Bloqueo total el domingo
+  if (esDomingo()) {
+    document.getElementById('loadingMsg').classList.remove('visible');
+    document.getElementById('cardEjec').style.display='none';
+    document.getElementById('cardGuardar_E').style.display='none';
+    mostrarBloqueDomingo(document.getElementById('semanaInfo').parentElement);
+    return;
+  }
   document.getElementById('loadingMsg').classList.add('visible');
   document.getElementById('semanaInfo').classList.remove('visible');
   document.getElementById('cardEjec').style.display='none';
