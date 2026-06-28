@@ -1263,15 +1263,12 @@ function estaAbierto() {
 // Calcula el sábado de cierre para la semana seleccionada en el formulario.
 // La semana va de lunes (lunesFecha) a sábado (+5 días).
 function cierreDeSemana(lunesFecha) {
-  // El cierre es el sábado de LA SEMANA ACTUAL (no de la semana programada)
-  // Ej: hoy miércoles 25-jun → cierre sábado 28-jun 23:59
-  //     hoy lunes 29-jun     → cierre sábado 04-jul 23:59
+  // El cierre es el sábado de LA SEMANA ACTUAL a las 23:59
+  // Si hoy es domingo → el cierre fue AYER (sábado pasado) → ya cerrado
+  // Si hoy es lunes-sábado → sábado de esta semana = hoy + (6 - dow)
   const hoy = new Date();
   const dow = hoy.getDay(); // 0=dom, 1=lun ... 6=sab
-  // Días hasta el próximo sábado de esta semana
-  // Si hoy es domingo (0) → sábado pasado fue ayer → cierre ya pasó → usar sábado próximo (+6)
-  // Si hoy es lunes-sábado → sábado de esta semana = hoy + (6-dow)
-  const diasHastaSab = dow === 0 ? 6 : (6 - dow);
+  const diasHastaSab = dow === 0 ? -1 : (6 - dow); // domingo: ayer (-1)
   const sab = new Date(hoy);
   sab.setDate(hoy.getDate() + diasHastaSab);
   sab.setHours(23, 59, 59, 0);
