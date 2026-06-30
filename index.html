@@ -57,10 +57,6 @@ h1{font-size:clamp(22px,3.5vw,32px);font-weight:700;margin:0 0 4px;letter-spacin
 @media(max-width:640px){.wrap{padding:0 14px 80px;}}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--cana-900);color:#fff;padding:11px 20px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.2);opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;z-index:100;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-.lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:90;align-items:center;justify-content:center;}
-.lightbox.visible{display:flex;}
-.lightbox img{max-width:90vw;max-height:90vh;border-radius:10px;}
-.lightbox-close{position:absolute;top:20px;right:24px;color:#fff;font-size:28px;cursor:pointer;background:none;border:none;line-height:1;}
 @media print{.no-print{display:none!important;} .top{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
 
 
@@ -295,13 +291,7 @@ select:focus{outline:none;border-color:var(--terracota);}
 .estado-msg{font-size:12px;font-weight:600;margin-top:10px;line-height:1.5;}
 .hint{font-size:12px;color:var(--texto-suave);margin-top:8px;line-height:1.5;}
 
-/* lightbox */
-.lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100;
-  align-items:center;justify-content:center;}
-.lightbox.visible{display:flex;}
-.lightbox img{max-width:90vw;max-height:90vh;border-radius:10px;box-shadow:0 8px 40px rgba(0,0,0,.5);}
-.lightbox-close{position:absolute;top:20px;right:24px;color:#fff;font-size:28px;
-  cursor:pointer;background:none;border:none;line-height:1;}
+
 
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
   background:var(--cana-900);color:#fff;padding:11px 20px;border-radius:10px;font-size:13px;
@@ -798,7 +788,7 @@ function switchAnalisis(tab) {
 
 
 
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwNCJaI8Hg3fRqogtVswt-_K-9Kw95f80rCZ5eZ3DaKc6OysQAR-t2tbREfbZxeg2d1Eg/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxbi2PZKILAhmssOO9jqCkghEFYYt1OfVabWZqFcigWpwPDZwSDyyDD2BaB7MVG2Nh5jw/exec';
 
 // Variables globales compartidas
 let archivos = [];
@@ -835,9 +825,8 @@ actualizarHora(); setInterval(actualizarHora, 60000);
 
 // ── SHARED: toast + lightbox ────────────────────────────────────────────────
 function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2800); }
-function abrirLightbox(src){ document.getElementById('lightboxImg').src=src; document.getElementById('lightbox').classList.add('visible'); }
-function cerrarLightbox(){ document.getElementById('lightbox').classList.remove('visible'); document.getElementById('lightboxImg').src=''; }
-document.addEventListener('keydown',e=>{ if(e.key==='Escape') cerrarLightbox(); });
+
+
 
 // ── NORMALIZAR HORA (Sheets guarda horas como fracción decimal) ─────────────
 function normalizarHora(v) {
@@ -1778,7 +1767,7 @@ function aplicarDatos(fuente){
     if(idx>=0&&idx<6) diasData_E[idx].push({
       id:uid_E(), hora:a.hora||'', lugar:a.lugar||'', tema:a.tema||'',
       actividad:a.actividad||'', estado:a.estado||'Planificado',
-      observacion:a.observacion||'', noPlaneada:!!a.noPlaneada, foto:a.foto||null,
+      observacion:a.observacion||'', noPlaneada:!!a.noPlaneada,
     });
   });
   const sab = metaDatos.lunesFecha ? (()=>{const d=new Date(metaDatos.lunesFecha+'T12:00:00');d.setDate(d.getDate()+5);return d.toISOString().slice(0,10);})() : '';
@@ -1898,64 +1887,6 @@ function mkAct(diaIdx, act, noPlaneada) {
   ctrl.appendChild(obsRow);
   inner.appendChild(ctrl);
 
-  // ── Fila foto — con opción de cámara ────────────────────────────────────
-  const fotoRow = document.createElement('div'); fotoRow.className = 'act-foto';
-  fotoRow.innerHTML = `<span class="foto-lbl">📷 Evidencia</span>`;
-  const fotoInput = document.createElement('input');
-  fotoInput.type = 'file';
-  fotoInput.className = 'foto-input';
-  fotoInput.accept = 'image/*';
-  fotoInput.setAttribute('capture', 'environment'); // Abre cámara en móvil
-
-  if (act.foto) {
-    const img = document.createElement('img'); img.className = 'foto-preview'; img.src = act.foto;
-    img.onclick = () => abrirLightbox(act.foto);
-    const rmFoto = document.createElement('button'); rmFoto.className = 'foto-rm';
-    rmFoto.textContent = '✕'; rmFoto.title = 'Quitar foto';
-    rmFoto.onclick = () => { act.foto = null; renderDias_E(); guardarBorrador_E(); };
-    fotoRow.appendChild(img); fotoRow.appendChild(rmFoto);
-  } else {
-    // Función compartida para procesar el archivo seleccionado
-    const procesarFoto = ev => {
-      const file = ev.target.files[0]; if (!file) return;
-      if (file.size > 4*1024*1024) { showToast('La foto supera 4MB'); return; }
-      const reader = new FileReader();
-      reader.onload = e => { act.foto = e.target.result; guardarBorrador_E(); renderDias_E(); };
-      reader.readAsDataURL(file);
-    };
-    fotoInput.onchange = procesarFoto;
-
-    // Input extra para adjuntar desde archivos (sin capture)
-    const fotoAdjuntar = document.createElement('input');
-    fotoAdjuntar.type = 'file'; fotoAdjuntar.accept = 'image/*';
-    fotoAdjuntar.style.display = 'none';
-    fotoAdjuntar.onchange = procesarFoto;
-    fotoRow.appendChild(fotoAdjuntar);
-
-    const btnsDiv = document.createElement('div');
-    btnsDiv.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;';
-
-    const btnCamara = document.createElement('button'); btnCamara.type = 'button';
-    btnCamara.className = 'foto-btn';
-    btnCamara.innerHTML = '📷 Tomar foto';
-    btnCamara.onclick = () => fotoInput.click();
-
-    const btnAdjuntar = document.createElement('button'); btnAdjuntar.type = 'button';
-    btnAdjuntar.className = 'foto-btn';
-    btnAdjuntar.innerHTML = '📎 Adjuntar foto';
-    btnAdjuntar.onclick = () => fotoAdjuntar.click();
-
-    const nota = document.createElement('span');
-    nota.style.cssText = 'font-size:10px;color:var(--texto-suave);align-self:center;';
-    nota.textContent = '(No obligatorio)';
-
-    btnsDiv.appendChild(btnCamara);
-    btnsDiv.appendChild(btnAdjuntar);
-    btnsDiv.appendChild(nota);
-    fotoRow.appendChild(btnsDiv);
-  }
-  fotoRow.appendChild(fotoInput);
-  inner.appendChild(fotoRow);
   outer.appendChild(inner);
   return outer;
 }
@@ -1992,7 +1923,7 @@ function mostrarFormNueva(diaIdx,card,addDiv){
   btnAdd.onclick=()=>{
     if(!inAct.value.trim()){ showToast('Escribe la descripción'); return; }
     diasData_E[diaIdx].push({id:uid_E(),hora:selHora.value,lugar:selLugar.value,tema:selTema.value,
-      actividad:inAct.value.trim(),estado:'No planificada',observacion:inObs.value.trim(),noPlaneada:true,foto:null});
+      actividad:inAct.value.trim(),estado:'No planificada',observacion:inObs.value.trim(),noPlaneada:true});
     // Ordenar el día por hora después de agregar
     diasData_E[diaIdx].sort((a,b)=>(a.hora||'99:99').localeCompare(b.hora||'99:99'));
     form.remove(); renderDias_E(); guardarBorrador_E();
@@ -2027,7 +1958,6 @@ function actualizarResumen_E(){
 }
 
 // ── Lightbox ─────────────────────────────────────────────────────────
-document.addEventListener('keydown',e=>{ if(e.key==='Escape') cerrarLightbox(); });
 
 // ── Borrador local ───────────────────────────────────────────────────
 function claveBorrador(n){ return 'ejec2_'+n.replace(/\s+/g,'_'); }
@@ -2043,7 +1973,7 @@ function recolectar_E(){
   diasData_E.forEach((dia,i)=>dia.forEach(a=>acts.push({
     dia:DIAS_E[i],diaIndex:i,fecha:fechaPara_E(i),hora:a.hora,lugar:a.lugar,tema:a.tema,
     actividad:a.actividad,estado:a.estado,observacion:a.observacion||'',
-    noPlaneada:!!a.noPlaneada,foto:a.foto||null,
+    noPlaneada:!!a.noPlaneada,
   })));
   return {...metaDatos,actividades:acts,tipo:'ejecucion',generadoEn:new Date().toISOString()};
 }
@@ -2576,9 +2506,5 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <div class="toast" id="toast"></div>
-<div class="lightbox" id="lightbox" onclick="cerrarLightbox()">
-  <button class="lightbox-close" onclick="cerrarLightbox()">✕</button>
-  <img id="lightboxImg" src="" alt="Evidencia">
-</div>
 </body>
 </html>
