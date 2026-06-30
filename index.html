@@ -788,7 +788,7 @@ function switchAnalisis(tab) {
 
 
 
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxbi2PZKILAhmssOO9jqCkghEFYYt1OfVabWZqFcigWpwPDZwSDyyDD2BaB7MVG2Nh5jw/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwMBHBKhj3C5I_6wmhruumna2Wg8Z1q3G06ElWZWbxTximOMqSUfHTOeEums8tB3E_c/exec';
 
 // Variables globales compartidas
 let archivos = [];
@@ -1865,7 +1865,7 @@ function mkAct(diaIdx, act, noPlaneada) {
         // Mostrar/ocultar observación según estado
         const obsRow = inner.querySelector('.obs-row');
         if (obsRow) {
-          const mostrarObs = e.val === 'Reprogramada' || e.val === 'Cancelada';
+          const mostrarObs = e.val === 'Reprogramada' || e.val === 'Cancelada' || e.val === 'No planificada';
           obsRow.style.display = mostrarObs ? '' : 'none';
         }
         guardarBorrador_E(); actualizarResumen_E();
@@ -1878,7 +1878,7 @@ function mkAct(diaIdx, act, noPlaneada) {
   // ── Observación — solo visible para Reprogramada y Cancelada ────────────
   const obsRow = document.createElement('div');
   obsRow.className = 'obs-row';
-  const mostrarObs = act.estado === 'Reprogramada' || act.estado === 'Cancelada';
+  const mostrarObs = act.estado === 'Reprogramada' || act.estado === 'Cancelada' || act.estado === 'No planificada';
   obsRow.style.display = mostrarObs ? '' : 'none';
   const obs = document.createElement('input'); obs.type = 'text'; obs.className = 'obs-inp';
   obs.placeholder = 'Observación (requerida)'; obs.value = act.observacion || '';
