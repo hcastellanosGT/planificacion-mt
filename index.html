@@ -227,8 +227,7 @@ select:focus{outline:none;border-color:var(--terracota);}
   border-radius:4px;font-family:var(--font-mono);margin-left:2px;vertical-align:middle;}
 
 /* fila de estado + observación */
-.act-ctrl{padding:10px 12px;border-top:1px solid var(--linea);
-  display:grid;grid-template-columns:170px 1fr;gap:10px;align-items:center;}
+.act-ctrl{padding:10px 12px;border-top:1px solid var(--linea);display:flex;flex-direction:column;gap:8px;}
 @media(max-width:520px){.act-ctrl{grid-template-columns:1fr;}}
 
 .est-btns{display:flex;gap:5px;flex-wrap:wrap;}
@@ -799,7 +798,7 @@ function switchAnalisis(tab) {
 
 
 
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwDkLx7mvLNJ6ES_4QHtOvfrq0hoGl4ciwmX7YhYkaZBMNSsP5WHH8-76d2pHhajimAxg/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwvTd4O_Utoo7HqgXuJsW0RsXuAb6wGB1pQZHH3B0TKIPWAu0y_XnkjPXbaV-qz4EiL4w/exec';
 
 // Variables globales compartidas
 let archivos = [];
@@ -1661,14 +1660,14 @@ const ZONAS_E = ['Oficinas Ingenio','Taller Central','Empresa','Hule Sur','Parti
 const TEMAS_E = ['Administrativo','Logística','Capacitación','Reporte / Informe','Reunión presencial','Reunión virtual','Ensayo','Asesorías','Supervisión de labores','Preparación de Tierras','Fertilización','Siembra Mecanizada','Resiembra Mecánica','Subproductos','Sacado de piedra manual','Sacado de piedra mecánico','Muestreo de suelos','Madurantes','Herbicidas','Inhibidor','Bioestimulantes','Premadurante','Malezas','Plagas','Semillero','Riego','Diseño de campo','Tomas agua fábrica','Elaboración de planos','Maquinaria','Muestreo'];
 
 // Estados disponibles para actividades planificadas
+// Estados con colores sólidos para botones activos
 const ESTADOS_PLAN = [
-  {val:'Planificado',  bg:'#EFF6FF',border:'#3B82F6',txt:'#1E3A8A'},
-  {val:'Realizada',    bg:'#F0FDF4',border:'#22C55E',txt:'#14532D'},
-  {val:'Reprogramada', bg:'#FFFBEB',border:'#F59E0B',txt:'#78350F'},
-  {val:'Cancelada',    bg:'#FFF1F2',border:'#F43F5E',txt:'#881337'},
+  {val:'Planificado',  bg:'#EFF6FF', border:'#3B82F6', txt:'#1E3A8A', solid:'#3B82F6'},
+  {val:'Realizada',    bg:'#F0FDF4', border:'#16A34A', txt:'#14532D', solid:'#16A34A'},
+  {val:'Reprogramada', bg:'#FFFBEB', border:'#D97706', txt:'#78350F', solid:'#D97706'},
+  {val:'Cancelada',    bg:'#FFF1F2', border:'#DC2626', txt:'#881337', solid:'#DC2626'},
 ];
-// No planificada — solo para actividades emergentes
-const EST_NOPLAN = {val:'No planificada',bg:'#F5F3FF',border:'#8B5CF6',txt:'#4C1D95'};
+const EST_NOPLAN = {val:'No planificada',bg:'#F5F3FF',border:'#7C3AED',txt:'#4C1D95',solid:'#7C3AED'};
 
 function estilo(v){
   if(v==='No planificada') return EST_NOPLAN;
@@ -1718,13 +1717,10 @@ async function cargarPlanificacion(nombre){
   document.getElementById('cardEjec').style.display='none';
   document.getElementById('cardGuardar_E').style.display='none';
 
-  const borrador = leerBorrador(nombre);
-  if(borrador){ aplicarDatos(borrador); document.getElementById('loadingMsg').classList.remove('visible'); showToast('Borrador recuperado ✓'); return; }
-
   if(WEB_APP_URL==='PEGA_AQUI_TU_URL'){ document.getElementById('loadingMsg').classList.remove('visible'); showToast('Sin conexión al servidor — contacta al administrador'); return; }
 
   try{
-    const res  = await fetch(WEB_APP_URL+'?t='+Date.now());
+    const res  = await fetch(WEB_APP_URL+'?responsable='+encodeURIComponent(nombre)+'&t='+Date.now());
     const data = await res.json();
     if(!data.ok) throw new Error(data.error);
     const misPersonas = (data.personas||[]).filter(p=>p.responsable===nombre);
@@ -1742,18 +1738,40 @@ async function cargarPlanificacion(nombre){
       String(lunesActual.getMonth()+1).padStart(2,'0') + '-' +
       String(lunesActual.getDate()).padStart(2,'0');
 
-    // Buscar la persona con ese lunes exacto, o la semana más reciente
-    const personaSemana = misPersonas.find(p => p.lunesFecha && 
+    // Buscar la persona con ese lunes exacto o la más reciente
+    const personaSemana = misPersonas.find(p => p.lunesFecha &&
       String(p.lunesFecha).slice(0,10) === lunesISO);
     const ultima = personaSemana || misPersonas.sort((a,b)=>Number(b.semana)-Number(a.semana))[0];
-    aplicarDatos(ultima);
+    if (!ultima) { showToast('No se encontró programación'); return; }
+
+    // Verificar si ya tiene ejecución guardada para esta semana
+    try {
+      const resEjec = await fetch(
+        WEB_APP_URL + '?modo=ejecucion&responsable=' +
+        encodeURIComponent(nombre) + '&semana=' + ultima.semana + '&t=' + Date.now()
+      );
+      const dataEjec = await resEjec.json();
+
+      if (dataEjec.ok && dataEjec.ejecucion && dataEjec.ejecucion.length) {
+        // Usar ejecución guardada — ya tiene estados, observaciones y no planificadas
+        aplicarDatos({ ...ultima, actividades: dataEjec.ejecucion });
+        showToast('Ejecución guardada cargada ✓');
+      } else {
+        // Sin ejecución previa — cargar planificación como punto de partida
+        aplicarDatos(ultima);
+      }
+    } catch(_) {
+      // Sin conexión para ejecución — cargar planificación
+      aplicarDatos(ultima);
+    }
   }catch(_){ showToast('Sin conexión — intenta de nuevo'); }
   finally{ document.getElementById('loadingMsg').classList.remove('visible'); }
 }
 
 function aplicarDatos(fuente){
   metaDatos = { responsable:fuente.responsable, departamento:fuente.departamento,
-    zafra:fuente.zafra, semana:String(fuente.semana), lunesFecha:fuente.lunesFecha };
+    zafra:fuente.zafra, semana:String(fuente.semana), 
+    lunesFecha: String(fuente.lunesFecha||'').slice(0,10) }; // normalizar fecha
   diasData_E = DIAS_E.map(()=>[]);
   (fuente.actividades||[]).forEach(a=>{
     const idx = a.diaIndex>=0 ? a.diaIndex : DIAS_E.indexOf(a.dia);
@@ -1791,8 +1809,9 @@ function renderDias_E(){
     if(!acts.length){
       const e=document.createElement('div'); e.className='empty-day'; e.textContent='Sin actividades planificadas.'; card.appendChild(e);
     } else {
-      acts.filter(a=>!a.noPlaneada).forEach(a=>card.appendChild(mkAct(i,a,false)));
-      acts.filter(a=>a.noPlaneada).forEach(a=>card.appendChild(mkAct(i,a,true)));
+      // Mostrar todas juntas ordenadas por hora, sin separar por tipo
+      acts.slice().sort((a,b)=>(a.hora||'99:99').localeCompare(b.hora||'99:99'))
+        .forEach(a=>card.appendChild(mkAct(i,a,!!a.noPlaneada)));
     }
 
     const addDiv=document.createElement('div'); addDiv.className='add-noplan';
@@ -1804,74 +1823,139 @@ function renderDias_E(){
   actualizarResumen_E();
 }
 
-function mkAct(diaIdx,act,noPlaneada){
+function mkAct(diaIdx, act, noPlaneada) {
   const es = estilo(act.estado);
-  const outer=document.createElement('div'); outer.className='act-wrap'+(noPlaneada?' noplan-wrap':'');
-  const inner=document.createElement('div'); inner.className='act-card'; inner.style.borderColor=es.border;
+  const outer = document.createElement('div');
+  outer.className = 'act-wrap' + (noPlaneada ? ' noplan-wrap' : '');
+  const inner = document.createElement('div');
+  inner.className = 'act-card';
+  inner.style.borderColor = es.border;
 
-  // ── fila superior ──
-  const top=document.createElement('div'); top.className='act-top';
-  const rmBtn = noPlaneada ? `<button class="btn-rm" onclick="eliminarAct(${diaIdx},'${act.id}')">✕</button>` : '';
-  top.innerHTML=`<span class="hora-badge" style="background:${jornadaColor_E(act.hora)}">${act.hora||'s/h'}</span><div class="act-det"><div class="act-nom">${act.actividad}${noPlaneada?'<span class="noplan-badge">No planificada</span>':''}</div><div class="act-tags"><span class="act-tag">${act.lugar||'Sin lugar'}</span><span class="act-tag">${act.tema||'Sin tema'}</span></div></div>${rmBtn}`;
+  // ── Fila superior: hora + info ──────────────────────────────────────────
+  const top = document.createElement('div'); top.className = 'act-top';
+  const rmBtn = noPlaneada
+    ? `<button class="btn-rm" onclick="eliminarAct(${diaIdx},'${act.id}')">✕</button>` : '';
+  top.innerHTML = `
+    <span class="hora-badge" style="background:${jornadaColor_E(act.hora)}">${act.hora||'s/h'}</span>
+    <div class="act-det">
+      <div class="act-nom">${act.actividad}${noPlaneada?'<span class="noplan-badge">No planificada</span>':''}</div>
+      <div class="act-tags">
+        <span class="act-tag">${act.lugar||'Sin lugar'}</span>
+        <span class="act-tag">${act.tema||'Sin tema'}</span>
+      </div>
+    </div>${rmBtn}`;
   inner.appendChild(top);
 
-  // ── fila estado + observación (solo planificadas cambian estado) ──
-  const ctrl=document.createElement('div'); ctrl.className='act-ctrl';
+  // ── Fila de estados — horizontal con colores ────────────────────────────
+  const ctrl = document.createElement('div'); ctrl.className = 'act-ctrl';
 
-  if(!noPlaneada){
-    const btnGrp=document.createElement('div'); btnGrp.className='est-btns';
-    ESTADOS_PLAN.forEach(e=>{
-      const btn=document.createElement('button'); btn.className='est-btn'+(act.estado===e.val?' active':'');
-      btn.textContent=e.val; btn.type='button';
-      if(act.estado===e.val) btn.style.cssText=`background:${e.bg};border-color:${e.border};color:${e.txt};`;
-      btn.onclick=()=>{
-        act.estado=e.val; inner.style.borderColor=e.border;
-        btnGrp.querySelectorAll('.est-btn').forEach(b=>{ b.classList.remove('active'); b.style.cssText=''; });
-        btn.classList.add('active'); btn.style.cssText=`background:${e.bg};border-color:${e.border};color:${e.txt};`;
+  const btnGrp = document.createElement('div');
+  btnGrp.style.cssText = 'display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;';
+
+  const estadosAMostrar = noPlaneada ? [EST_NOPLAN] : ESTADOS_PLAN;
+
+  estadosAMostrar.forEach(e => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = e.val;
+    const isActive = act.estado === e.val;
+    btn.style.cssText = isActive
+      ? `font-size:11px;font-weight:700;padding:5px 10px;border-radius:6px;border:none;cursor:pointer;background:${e.solid};color:#fff;white-space:nowrap;`
+      : `font-size:11px;font-weight:600;padding:5px 10px;border-radius:6px;border:1.5px solid ${e.border};cursor:pointer;background:#fff;color:${e.txt};white-space:nowrap;`;
+
+    if (!noPlaneada) {
+      btn.onclick = () => {
+        act.estado = e.val;
+        inner.style.borderColor = e.border;
+        // Actualizar estilos de todos los botones
+        btnGrp.querySelectorAll('button').forEach(b => {
+          const eB = ESTADOS_PLAN.find(x => x.val === b.textContent);
+          if (eB) b.style.cssText = `font-size:11px;font-weight:600;padding:5px 10px;border-radius:6px;border:1.5px solid ${eB.border};cursor:pointer;background:#fff;color:${eB.txt};white-space:nowrap;`;
+        });
+        btn.style.cssText = `font-size:11px;font-weight:700;padding:5px 10px;border-radius:6px;border:none;cursor:pointer;background:${e.solid};color:#fff;white-space:nowrap;`;
+        // Mostrar/ocultar observación según estado
+        const obsRow = inner.querySelector('.obs-row');
+        if (obsRow) {
+          const mostrarObs = e.val === 'Reprogramada' || e.val === 'Cancelada';
+          obsRow.style.display = mostrarObs ? '' : 'none';
+        }
         guardarBorrador_E(); actualizarResumen_E();
       };
-      btnGrp.appendChild(btn);
-    });
-    ctrl.appendChild(btnGrp);
-  } else {
-    // no planificada: muestra badge fijo sin botones de estado
-    const badge=document.createElement('div');
-    badge.style.cssText=`font-size:11px;font-weight:600;padding:5px 10px;border-radius:6px;background:${EST_NOPLAN.bg};border:1.5px solid ${EST_NOPLAN.border};color:${EST_NOPLAN.txt};display:inline-block;`;
-    badge.textContent='No planificada'; ctrl.appendChild(badge);
-  }
+    }
+    btnGrp.appendChild(btn);
+  });
+  ctrl.appendChild(btnGrp);
 
-  const obs=document.createElement('input'); obs.type='text'; obs.className='obs-inp';
-  obs.placeholder='Observación (opcional)'; obs.value=act.observacion||'';
-  obs.oninput=ev=>{ act.observacion=ev.target.value; guardarBorrador_E(); };
-  ctrl.appendChild(obs);
+  // ── Observación — solo visible para Reprogramada y Cancelada ────────────
+  const obsRow = document.createElement('div');
+  obsRow.className = 'obs-row';
+  const mostrarObs = act.estado === 'Reprogramada' || act.estado === 'Cancelada';
+  obsRow.style.display = mostrarObs ? '' : 'none';
+  const obs = document.createElement('input'); obs.type = 'text'; obs.className = 'obs-inp';
+  obs.placeholder = 'Observación (requerida)'; obs.value = act.observacion || '';
+  obs.oninput = ev => { act.observacion = ev.target.value; guardarBorrador_E(); };
+  obsRow.appendChild(obs);
+  ctrl.appendChild(obsRow);
   inner.appendChild(ctrl);
 
-  // ── fila foto ──
-  const fotoRow=document.createElement('div'); fotoRow.className='act-foto';
-  fotoRow.innerHTML=`<span class="foto-lbl">📷 Evidencia</span>`;
-  const fotoInput=document.createElement('input'); fotoInput.type='file'; fotoInput.className='foto-input'; fotoInput.accept='image/*';
+  // ── Fila foto — con opción de cámara ────────────────────────────────────
+  const fotoRow = document.createElement('div'); fotoRow.className = 'act-foto';
+  fotoRow.innerHTML = `<span class="foto-lbl">📷 Evidencia</span>`;
+  const fotoInput = document.createElement('input');
+  fotoInput.type = 'file';
+  fotoInput.className = 'foto-input';
+  fotoInput.accept = 'image/*';
+  fotoInput.setAttribute('capture', 'environment'); // Abre cámara en móvil
 
-  if(act.foto){
-    const img=document.createElement('img'); img.className='foto-preview'; img.src=act.foto;
-    img.onclick=()=>abrirLightbox(act.foto);
-    const rmFoto=document.createElement('button'); rmFoto.className='foto-rm'; rmFoto.textContent='✕'; rmFoto.title='Quitar foto';
-    rmFoto.onclick=()=>{ act.foto=null; renderDias_E(); guardarBorrador_E(); };
+  if (act.foto) {
+    const img = document.createElement('img'); img.className = 'foto-preview'; img.src = act.foto;
+    img.onclick = () => abrirLightbox(act.foto);
+    const rmFoto = document.createElement('button'); rmFoto.className = 'foto-rm';
+    rmFoto.textContent = '✕'; rmFoto.title = 'Quitar foto';
+    rmFoto.onclick = () => { act.foto = null; renderDias_E(); guardarBorrador_E(); };
     fotoRow.appendChild(img); fotoRow.appendChild(rmFoto);
   } else {
-    const btn=document.createElement('button'); btn.type='button'; btn.className='foto-btn';
-    btn.innerHTML='📁 Subir foto'; btn.onclick=()=>fotoInput.click();
-    fotoInput.onchange=ev=>{
-      const file=ev.target.files[0]; if(!file) return;
-      if(file.size>4*1024*1024){ showToast('La foto supera 4MB — usa una imagen más pequeña'); return; }
-      const reader=new FileReader();
-      reader.onload=e=>{ act.foto=e.target.result; guardarBorrador_E(); renderDias_E(); };
+    // Función compartida para procesar el archivo seleccionado
+    const procesarFoto = ev => {
+      const file = ev.target.files[0]; if (!file) return;
+      if (file.size > 4*1024*1024) { showToast('La foto supera 4MB'); return; }
+      const reader = new FileReader();
+      reader.onload = e => { act.foto = e.target.result; guardarBorrador_E(); renderDias_E(); };
       reader.readAsDataURL(file);
     };
-    fotoRow.appendChild(btn);
+    fotoInput.onchange = procesarFoto;
+
+    // Input extra para adjuntar desde archivos (sin capture)
+    const fotoAdjuntar = document.createElement('input');
+    fotoAdjuntar.type = 'file'; fotoAdjuntar.accept = 'image/*';
+    fotoAdjuntar.style.display = 'none';
+    fotoAdjuntar.onchange = procesarFoto;
+    fotoRow.appendChild(fotoAdjuntar);
+
+    const btnsDiv = document.createElement('div');
+    btnsDiv.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;';
+
+    const btnCamara = document.createElement('button'); btnCamara.type = 'button';
+    btnCamara.className = 'foto-btn';
+    btnCamara.innerHTML = '📷 Tomar foto';
+    btnCamara.onclick = () => fotoInput.click();
+
+    const btnAdjuntar = document.createElement('button'); btnAdjuntar.type = 'button';
+    btnAdjuntar.className = 'foto-btn';
+    btnAdjuntar.innerHTML = '📎 Adjuntar foto';
+    btnAdjuntar.onclick = () => fotoAdjuntar.click();
+
+    const nota = document.createElement('span');
+    nota.style.cssText = 'font-size:10px;color:var(--texto-suave);align-self:center;';
+    nota.textContent = '(No obligatorio)';
+
+    btnsDiv.appendChild(btnCamara);
+    btnsDiv.appendChild(btnAdjuntar);
+    btnsDiv.appendChild(nota);
+    fotoRow.appendChild(btnsDiv);
   }
   fotoRow.appendChild(fotoInput);
   inner.appendChild(fotoRow);
-
   outer.appendChild(inner);
   return outer;
 }
@@ -1909,6 +1993,8 @@ function mostrarFormNueva(diaIdx,card,addDiv){
     if(!inAct.value.trim()){ showToast('Escribe la descripción'); return; }
     diasData_E[diaIdx].push({id:uid_E(),hora:selHora.value,lugar:selLugar.value,tema:selTema.value,
       actividad:inAct.value.trim(),estado:'No planificada',observacion:inObs.value.trim(),noPlaneada:true,foto:null});
+    // Ordenar el día por hora después de agregar
+    diasData_E[diaIdx].sort((a,b)=>(a.hora||'99:99').localeCompare(b.hora||'99:99'));
     form.remove(); renderDias_E(); guardarBorrador_E();
   };
   const btnCxl=document.createElement('button'); btnCxl.className='btn btn-ghost btn-sm'; btnCxl.textContent='Cancelar';
