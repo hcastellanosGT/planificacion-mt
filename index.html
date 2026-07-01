@@ -815,7 +815,7 @@ function switchAnalisis(tab) {
 
 
 
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxMaCsFSRhj4vc2wxA9VWjwwoa2ETu54gxVjPqkE7lVkd_e0z3R8y6i9BLvS8wj5yzu/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxrhlzUglwWP69c6KhE2mMFvOnlRUpfd1hGYrOxGT4whO1e31rAT6yVPm5a2CZI_Fl-KQ/exec';
 
 // Variables globales compartidas
 let archivos = [];
@@ -1718,6 +1718,47 @@ function icsEscape(str) {
 }
 
 
+
+// ── COMPRESIÓN DE IMAGEN ─────────────────────────────────────────────────────
+// Reduce la imagen a máximo 30KB para que quepa en Google Sheets (límite ~50K chars)
+function comprimirImagen(file, callback) {
+  const MAX_BYTES = 28000; // ~37KB base64 → margen seguro bajo 50K chars
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      let w = img.width, h = img.height;
+
+      // Reducir dimensiones si la imagen es muy grande
+      const MAX_DIM = 800;
+      if (w > MAX_DIM || h > MAX_DIM) {
+        if (w > h) { h = Math.round(h * MAX_DIM / w); w = MAX_DIM; }
+        else        { w = Math.round(w * MAX_DIM / h); h = MAX_DIM; }
+      }
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+
+      // Comprimir iterativamente hasta estar bajo el límite
+      let quality = 0.7;
+      let dataUrl = canvas.toDataURL('image/jpeg', quality);
+      let bytes = Math.round(dataUrl.length * 0.75);
+
+      while (bytes > MAX_BYTES && quality > 0.1) {
+        quality -= 0.1;
+        dataUrl = canvas.toDataURL('image/jpeg', quality);
+        bytes = Math.round(dataUrl.length * 0.75);
+      }
+
+      const kb = Math.round(bytes / 1024);
+      callback(dataUrl, kb);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
 // EJECUCIÓN
 const EQUIPO_E = {
   'Alejandro Callejas'  :'Subgerencia de Producción',
@@ -1858,7 +1899,7 @@ function aplicarDatos(fuente){
     if(idx>=0&&idx<6) diasData_E[idx].push({
       id:uid_E(), hora:a.hora||'', lugar:a.lugar||'', tema:a.tema||'',
       actividad:a.actividad||'', estado:a.estado||'Planificado',
-      observacion:a.observacion||'', noPlaneada:!!a.noPlaneada,
+      observacion:a.observacion||'', noPlaneada:!!a.noPlaneada, foto:a.foto||null,
     });
   });
   const sab = metaDatos.lunesFecha ? (()=>{const d=new Date(metaDatos.lunesFecha+'T12:00:00');d.setDate(d.getDate()+5);return d.toISOString().slice(0,10);})() : '';
@@ -1978,6 +2019,75 @@ function mkAct(diaIdx, act, noPlaneada) {
   ctrl.appendChild(obsRow);
   inner.appendChild(ctrl);
 
+  // ── Fila foto ──────────────────────────────────────────────────────────
+  const fotoRow = document.createElement('div');
+  fotoRow.style.cssText = 'padding:8px 12px;border-top:1px solid var(--linea);display:flex;align-items:center;gap:8px;flex-wrap:wrap;';
+
+  if (act.foto) {
+    const img = document.createElement('img');
+    img.src = act.foto;
+    img.style.cssText = 'height:56px;width:auto;border-radius:6px;cursor:pointer;border:1px solid var(--linea);';
+    img.title = 'Clic para ampliar';
+    img.onclick = () => {
+      const win = window.open();
+      win.document.write('<img src="' + act.foto + '" style="max-width:100%;max-height:100vh;">');
+    };
+    const btnRmFoto = document.createElement('button');
+    btnRmFoto.textContent = '✕ Quitar';
+    btnRmFoto.style.cssText = 'font-size:11px;padding:4px 8px;border:1px solid #ddd;border-radius:6px;cursor:pointer;background:#fff;color:var(--alerta);';
+    btnRmFoto.onclick = () => { act.foto = null; guardarBorrador_E(); renderDias_E(); };
+    fotoRow.appendChild(img);
+    fotoRow.appendChild(btnRmFoto);
+  } else {
+    const fotoInput = document.createElement('input');
+    fotoInput.type = 'file'; fotoInput.accept = 'image/*';
+    fotoInput.setAttribute('capture', 'environment');
+    fotoInput.style.display = 'none';
+
+    const fotoAdjuntar = document.createElement('input');
+    fotoAdjuntar.type = 'file'; fotoAdjuntar.accept = 'image/*';
+    fotoAdjuntar.style.display = 'none';
+
+    const procesarFoto = ev => {
+      const file = ev.target.files[0]; if (!file) return;
+      const btnC = fotoRow.querySelector('.btn-foto-camara');
+      const btnA = fotoRow.querySelector('.btn-foto-adj');
+      if (btnC) { btnC.disabled = true; btnC.textContent = '⏳ Comprimiendo...'; }
+      if (btnA) { btnA.disabled = true; }
+      comprimirImagen(file, (dataUrl, kb) => {
+        act.foto = dataUrl;
+        guardarBorrador_E();
+        renderDias_E();
+        showToast('📷 Foto guardada (' + kb + 'KB)');
+      });
+    };
+    fotoInput.onchange = procesarFoto;
+    fotoAdjuntar.onchange = procesarFoto;
+
+    const btnCamara = document.createElement('button');
+    btnCamara.type = 'button'; btnCamara.className = 'btn-foto-camara';
+    btnCamara.style.cssText = 'font-size:11px;padding:5px 10px;border:1.5px solid var(--linea);border-radius:6px;cursor:pointer;background:#fff;';
+    btnCamara.innerHTML = '📷 Tomar foto';
+    btnCamara.onclick = () => fotoInput.click();
+
+    const btnAdj = document.createElement('button');
+    btnAdj.type = 'button'; btnAdj.className = 'btn-foto-adj';
+    btnAdj.style.cssText = 'font-size:11px;padding:5px 10px;border:1.5px solid var(--linea);border-radius:6px;cursor:pointer;background:#fff;';
+    btnAdj.innerHTML = '📎 Adjuntar';
+    btnAdj.onclick = () => fotoAdjuntar.click();
+
+    const nota = document.createElement('span');
+    nota.style.cssText = 'font-size:10px;color:var(--texto-suave);';
+    nota.textContent = '(No obligatorio)';
+
+    fotoRow.appendChild(btnCamara);
+    fotoRow.appendChild(btnAdj);
+    fotoRow.appendChild(nota);
+    fotoRow.appendChild(fotoInput);
+    fotoRow.appendChild(fotoAdjuntar);
+  }
+  inner.appendChild(fotoRow);
+
   outer.appendChild(inner);
   return outer;
 }
@@ -2064,7 +2174,7 @@ function recolectar_E(){
   diasData_E.forEach((dia,i)=>dia.forEach(a=>acts.push({
     dia:DIAS_E[i],diaIndex:i,fecha:fechaPara_E(i),hora:a.hora,lugar:a.lugar,tema:a.tema,
     actividad:a.actividad,estado:a.estado,observacion:a.observacion||'',
-    noPlaneada:!!a.noPlaneada,
+    noPlaneada:!!a.noPlaneada, foto:a.foto||null,
   })));
   return {...metaDatos,actividades:acts,tipo:'ejecucion',generadoEn:new Date().toISOString()};
 }
