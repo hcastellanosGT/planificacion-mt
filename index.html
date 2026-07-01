@@ -1719,6 +1719,17 @@ function icsEscape(str) {
 
 
 
+
+function dataURLtoBlob(dataURL) {
+  const arr = dataURL.split(',');
+  const mime = arr[0].match(/:(.*?);/)[1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while(n--) u8arr[n] = bstr.charCodeAt(n);
+  return new Blob([u8arr], {type: mime});
+}
+
 // ── COMPRESIÓN DE IMAGEN ─────────────────────────────────────────────────────
 // Reduce la imagen a máximo 30KB para que quepa en Google Sheets (límite ~50K chars)
 function comprimirImagen(file, callback) {
@@ -1899,7 +1910,8 @@ function aplicarDatos(fuente){
     if(idx>=0&&idx<6) diasData_E[idx].push({
       id:uid_E(), hora:a.hora||'', lugar:a.lugar||'', tema:a.tema||'',
       actividad:a.actividad||'', estado:a.estado||'Planificado',
-      observacion:a.observacion||'', noPlaneada:!!a.noPlaneada, foto:a.foto||null,
+      observacion:a.observacion||'', noPlaneada:!!a.noPlaneada,
+      foto: a.foto || null,  // null = sin foto, muestra botones
     });
   });
   const sab = metaDatos.lunesFecha ? (()=>{const d=new Date(metaDatos.lunesFecha+'T12:00:00');d.setDate(d.getDate()+5);return d.toISOString().slice(0,10);})() : '';
@@ -2023,69 +2035,72 @@ function mkAct(diaIdx, act, noPlaneada) {
   const fotoRow = document.createElement('div');
   fotoRow.style.cssText = 'padding:8px 12px;border-top:1px solid var(--linea);display:flex;align-items:center;gap:8px;flex-wrap:wrap;';
 
+  // Inputs de archivo (siempre presentes)
+  const fotoInput = document.createElement('input');
+  fotoInput.type = 'file'; fotoInput.accept = 'image/*';
+  fotoInput.setAttribute('capture', 'environment');
+  fotoInput.style.display = 'none';
+
+  const fotoAdjuntar = document.createElement('input');
+  fotoAdjuntar.type = 'file'; fotoAdjuntar.accept = 'image/*';
+  fotoAdjuntar.style.display = 'none';
+
+  const procesarFoto = ev => {
+    const file = ev.target.files[0]; if (!file) return;
+    showToast('⏳ Comprimiendo foto...');
+    comprimirImagen(file, (dataUrl, kb) => {
+      act.foto = dataUrl;
+      guardarBorrador_E();
+      renderDias_E();
+      showToast('📷 Foto guardada (' + kb + 'KB)');
+    });
+  };
+  fotoInput.onchange = procesarFoto;
+  fotoAdjuntar.onchange = procesarFoto;
+
+  // Miniatura si ya hay foto
   if (act.foto) {
     const img = document.createElement('img');
     img.src = act.foto;
-    img.style.cssText = 'height:56px;width:auto;border-radius:6px;cursor:pointer;border:1px solid var(--linea);';
+    img.style.cssText = 'height:56px;width:auto;max-width:100px;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid var(--linea);';
     img.title = 'Clic para ampliar';
     img.onclick = () => {
-      const win = window.open();
-      win.document.write('<img src="' + act.foto + '" style="max-width:100%;max-height:100vh;">');
+      const blob = dataURLtoBlob(act.foto);
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
     };
-    const btnRmFoto = document.createElement('button');
-    btnRmFoto.textContent = '✕ Quitar';
-    btnRmFoto.style.cssText = 'font-size:11px;padding:4px 8px;border:1px solid #ddd;border-radius:6px;cursor:pointer;background:#fff;color:var(--alerta);';
-    btnRmFoto.onclick = () => { act.foto = null; guardarBorrador_E(); renderDias_E(); };
     fotoRow.appendChild(img);
-    fotoRow.appendChild(btnRmFoto);
-  } else {
-    const fotoInput = document.createElement('input');
-    fotoInput.type = 'file'; fotoInput.accept = 'image/*';
-    fotoInput.setAttribute('capture', 'environment');
-    fotoInput.style.display = 'none';
 
-    const fotoAdjuntar = document.createElement('input');
-    fotoAdjuntar.type = 'file'; fotoAdjuntar.accept = 'image/*';
-    fotoAdjuntar.style.display = 'none';
-
-    const procesarFoto = ev => {
-      const file = ev.target.files[0]; if (!file) return;
-      const btnC = fotoRow.querySelector('.btn-foto-camara');
-      const btnA = fotoRow.querySelector('.btn-foto-adj');
-      if (btnC) { btnC.disabled = true; btnC.textContent = '⏳ Comprimiendo...'; }
-      if (btnA) { btnA.disabled = true; }
-      comprimirImagen(file, (dataUrl, kb) => {
-        act.foto = dataUrl;
-        guardarBorrador_E();
-        renderDias_E();
-        showToast('📷 Foto guardada (' + kb + 'KB)');
-      });
-    };
-    fotoInput.onchange = procesarFoto;
-    fotoAdjuntar.onchange = procesarFoto;
-
-    const btnCamara = document.createElement('button');
-    btnCamara.type = 'button'; btnCamara.className = 'btn-foto-camara';
-    btnCamara.style.cssText = 'font-size:11px;padding:5px 10px;border:1.5px solid var(--linea);border-radius:6px;cursor:pointer;background:#fff;';
-    btnCamara.innerHTML = '📷 Tomar foto';
-    btnCamara.onclick = () => fotoInput.click();
-
-    const btnAdj = document.createElement('button');
-    btnAdj.type = 'button'; btnAdj.className = 'btn-foto-adj';
-    btnAdj.style.cssText = 'font-size:11px;padding:5px 10px;border:1.5px solid var(--linea);border-radius:6px;cursor:pointer;background:#fff;';
-    btnAdj.innerHTML = '📎 Adjuntar';
-    btnAdj.onclick = () => fotoAdjuntar.click();
-
-    const nota = document.createElement('span');
-    nota.style.cssText = 'font-size:10px;color:var(--texto-suave);';
-    nota.textContent = '(No obligatorio)';
-
-    fotoRow.appendChild(btnCamara);
-    fotoRow.appendChild(btnAdj);
-    fotoRow.appendChild(nota);
-    fotoRow.appendChild(fotoInput);
-    fotoRow.appendChild(fotoAdjuntar);
+    const btnRm = document.createElement('button');
+    btnRm.textContent = '✕';
+    btnRm.title = 'Quitar foto';
+    btnRm.style.cssText = 'font-size:11px;padding:3px 7px;border:1px solid #ddd;border-radius:6px;cursor:pointer;background:#fff;color:var(--alerta);';
+    btnRm.onclick = () => { act.foto = null; guardarBorrador_E(); renderDias_E(); };
+    fotoRow.appendChild(btnRm);
   }
+
+  // Botones siempre visibles (para tomar o cambiar foto)
+  const btnCamara = document.createElement('button');
+  btnCamara.type = 'button';
+  btnCamara.style.cssText = 'font-size:11px;padding:5px 10px;border:1.5px solid var(--linea);border-radius:6px;cursor:pointer;background:#fff;';
+  btnCamara.innerHTML = act.foto ? '🔄 Cambiar' : '📷 Tomar foto';
+  btnCamara.onclick = () => fotoInput.click();
+
+  const btnAdj = document.createElement('button');
+  btnAdj.type = 'button';
+  btnAdj.style.cssText = 'font-size:11px;padding:5px 10px;border:1.5px solid var(--linea);border-radius:6px;cursor:pointer;background:#fff;';
+  btnAdj.innerHTML = '📎 Adjuntar';
+  btnAdj.onclick = () => fotoAdjuntar.click();
+
+  const nota = document.createElement('span');
+  nota.style.cssText = 'font-size:10px;color:var(--texto-suave);';
+  nota.textContent = '(No obligatorio)';
+
+  fotoRow.appendChild(btnCamara);
+  fotoRow.appendChild(btnAdj);
+  fotoRow.appendChild(nota);
+  fotoRow.appendChild(fotoInput);
+  fotoRow.appendChild(fotoAdjuntar);
   inner.appendChild(fotoRow);
 
   outer.appendChild(inner);
@@ -2124,7 +2139,7 @@ function mostrarFormNueva(diaIdx,card,addDiv){
   btnAdd.onclick=()=>{
     if(!inAct.value.trim()){ showToast('Escribe la descripción'); return; }
     diasData_E[diaIdx].push({id:uid_E(),hora:selHora.value,lugar:selLugar.value,tema:selTema.value,
-      actividad:inAct.value.trim(),estado:'No planificada',observacion:inObs.value.trim(),noPlaneada:true});
+      actividad:inAct.value.trim(),estado:'No planificada',observacion:inObs.value.trim(),noPlaneada:true,foto:null});
     // Ordenar el día por hora después de agregar
     diasData_E[diaIdx].sort((a,b)=>(a.hora||'99:99').localeCompare(b.hora||'99:99'));
     form.remove(); renderDias_E(); guardarBorrador_E();
