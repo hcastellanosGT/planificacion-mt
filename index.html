@@ -815,7 +815,7 @@ function switchAnalisis(tab) {
 
 
 
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxrhlzUglwWP69c6KhE2mMFvOnlRUpfd1hGYrOxGT4whO1e31rAT6yVPm5a2CZI_Fl-KQ/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby6HN65dhi04CtMW6f5R9X_nQwTAA9hr2HK9jMrXvidV7A29PhNIB9wxUkcyCeTspLSwQ/exec';
 
 // Variables globales compartidas
 let archivos = [];
@@ -1911,7 +1911,7 @@ function aplicarDatos(fuente){
       id:uid_E(), hora:a.hora||'', lugar:a.lugar||'', tema:a.tema||'',
       actividad:a.actividad||'', estado:a.estado||'Planificado',
       observacion:a.observacion||'', noPlaneada:!!a.noPlaneada,
-      foto: a.foto || null,  // null = sin foto, muestra botones
+      foto: (a.foto && String(a.foto).startsWith('data:image')) ? a.foto : null,
     });
   });
   const sab = metaDatos.lunesFecha ? (()=>{const d=new Date(metaDatos.lunesFecha+'T12:00:00');d.setDate(d.getDate()+5);return d.toISOString().slice(0,10);})() : '';
@@ -2059,22 +2059,37 @@ function mkAct(diaIdx, act, noPlaneada) {
   fotoAdjuntar.onchange = procesarFoto;
 
   // Miniatura si ya hay foto
-  if (act.foto) {
-    const img = document.createElement('img');
-    img.src = act.foto;
-    img.style.cssText = 'height:56px;width:auto;max-width:100px;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid var(--linea);';
-    img.title = 'Clic para ampliar';
-    img.onclick = () => {
+  if (act.foto && String(act.foto).startsWith('data:image')) {
+    const imgWrap = document.createElement('div');
+    imgWrap.style.cssText = 'position:relative;display:inline-block;cursor:pointer;';
+    imgWrap.title = 'Clic para ampliar';
+    imgWrap.onclick = () => {
       const blob = dataURLtoBlob(act.foto);
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank');
     };
-    fotoRow.appendChild(img);
+
+    const img = document.createElement('img');
+    img.style.cssText = 'height:64px;width:64px;object-fit:cover;border-radius:8px;border:1.5px solid var(--linea);display:block;';
+    // Asegurar que el src tiene el prefijo correcto
+    img.src = act.foto.startsWith('data:') ? act.foto : 'data:image/jpeg;base64,' + act.foto;
+    img.alt = '';
+
+    // Overlay de ampliar
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,.35);border-radius:8px;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;';
+    overlay.innerHTML = '<span style="color:#fff;font-size:18px;">🔍</span>';
+    imgWrap.onmouseenter = () => overlay.style.opacity = '1';
+    imgWrap.onmouseleave = () => overlay.style.opacity = '0';
+
+    imgWrap.appendChild(img);
+    imgWrap.appendChild(overlay);
+    fotoRow.appendChild(imgWrap);
 
     const btnRm = document.createElement('button');
     btnRm.textContent = '✕';
     btnRm.title = 'Quitar foto';
-    btnRm.style.cssText = 'font-size:11px;padding:3px 7px;border:1px solid #ddd;border-radius:6px;cursor:pointer;background:#fff;color:var(--alerta);';
+    btnRm.style.cssText = 'font-size:11px;padding:3px 7px;border:1px solid #ddd;border-radius:6px;cursor:pointer;background:#fff;color:var(--alerta);align-self:flex-start;';
     btnRm.onclick = () => { act.foto = null; guardarBorrador_E(); renderDias_E(); };
     fotoRow.appendChild(btnRm);
   }
@@ -2189,7 +2204,7 @@ function recolectar_E(){
   diasData_E.forEach((dia,i)=>dia.forEach(a=>acts.push({
     dia:DIAS_E[i],diaIndex:i,fecha:fechaPara_E(i),hora:a.hora,lugar:a.lugar,tema:a.tema,
     actividad:a.actividad,estado:a.estado,observacion:a.observacion||'',
-    noPlaneada:!!a.noPlaneada, foto:a.foto||null,
+    noPlaneada:!!a.noPlaneada, foto:(a.foto && String(a.foto).startsWith('data:image')) ? a.foto : null,
   })));
   return {...metaDatos,actividades:acts,tipo:'ejecucion',generadoEn:new Date().toISOString()};
 }
