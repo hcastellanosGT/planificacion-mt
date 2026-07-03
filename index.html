@@ -815,7 +815,7 @@ function switchAnalisis(tab) {
 
 
 
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby6HN65dhi04CtMW6f5R9X_nQwTAA9hr2HK9jMrXvidV7A29PhNIB9wxUkcyCeTspLSwQ/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwl-z3rtGGA5LOGbaWEtpJX9y-opngpA6SoyAXiGYjcTiRnJvrv7jBcLhEWHutTF2Rt7A/exec';
 
 // Variables globales compartidas
 let archivos = [];
@@ -1514,7 +1514,7 @@ async function cargarMiPlanificacion() {
   const estado = document.getElementById('estadoCargaPlan');
   btn.disabled = true; btn.textContent = 'Cargando…';
   try {
-    const res  = await fetch(WEB_APP_URL + '?t=' + Date.now());
+    const res  = await fetch(WEB_APP_URL + '?semana=' + semanaCalculada + '&t=' + Date.now());
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'Error al conectar');
     const semanaTarget = String(semanaCalculada);
@@ -1852,7 +1852,14 @@ async function cargarPlanificacion(nombre){
   if(WEB_APP_URL==='PEGA_AQUI_TU_URL'){ document.getElementById('loadingMsg').classList.remove('visible'); showToast('Sin conexión al servidor — contacta al administrador'); return; }
 
   try{
-    const res  = await fetch(WEB_APP_URL+'?responsable='+encodeURIComponent(nombre)+'&t='+Date.now());
+    // Calcular semana actual para ejecución
+    const hoyFE = new Date();
+    const dowFE = hoyFE.getDay();
+    const diasDesdeLunesFE = dowFE === 0 ? 6 : dowFE - 1;
+    const lunesFE = new Date(hoyFE);
+    lunesFE.setDate(hoyFE.getDate() - diasDesdeLunesFE);
+    const semanaEjec = calcularSemanaJS(lunesFE);
+    const res  = await fetch(WEB_APP_URL+'?responsable='+encodeURIComponent(nombre)+'&semana='+semanaEjec+'&t='+Date.now());
     const data = await res.json();
     if(!data.ok) throw new Error(data.error);
     const misPersonas = (data.personas||[]).filter(p=>p.responsable===nombre);
