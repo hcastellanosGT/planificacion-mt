@@ -2191,8 +2191,14 @@ function actualizarResumen_E(){
     pill.style.cssText=`background:${bg};border-color:${border};color:${txt};`;
     pill.textContent=`${k}: ${v}`; bar.appendChild(pill);
   });
-  const pct=total?Math.round(c['Realizada']/total*100):0;
-  document.getElementById('resTxt').innerHTML=`<b>${c['Realizada']}</b>/${total} realizadas &nbsp;·&nbsp; ${pct}% completado`;
+  // Las "No planificada" cuentan como ejecutadas — ya se realizaron
+  const ejecutadas = c['Realizada'] + c['No planificada'];
+  const pct=total?Math.round(ejecutadas/total*100):0;
+  document.getElementById('resTxt').innerHTML=`<b>${ejecutadas}</b>/${total} ejecutadas &nbsp;·&nbsp; <b>${pct}%</b> — mi progreso de la semana`;
+  const resEl = document.getElementById('resTxt');
+  resEl.style.fontSize = '16px';
+  resEl.style.fontWeight = '600';
+  resEl.style.color = pct >= 100 ? 'var(--cana-700)' : 'var(--texto)';
 }
 
 // ── Lightbox ─────────────────────────────────────────────────────────
