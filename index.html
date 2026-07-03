@@ -1858,7 +1858,7 @@ async function cargarPlanificacion(nombre){
     const diasDesdeLunesFE = dowFE === 0 ? 6 : dowFE - 1;
     const lunesFE = new Date(hoyFE);
     lunesFE.setDate(hoyFE.getDate() - diasDesdeLunesFE);
-    const semanaEjec = calcularSemanaJS(lunesFE);
+    const semanaEjec = calcularSemana(lunesFE);
     const res  = await fetch(WEB_APP_URL+'?responsable='+encodeURIComponent(nombre)+'&semana='+semanaEjec+'&t='+Date.now());
     const data = await res.json();
     if(!data.ok) throw new Error(data.error);
