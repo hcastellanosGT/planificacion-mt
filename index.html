@@ -666,7 +666,7 @@ table.det tr:hover td{background:#faf6ef;}
             <h2>📅 Calendario semanal</h2>
             <div class="filtros no-print">
               <select id="fDepto"><option value="">Todos los departamentos</option></select>
-              <select id="fResp"><option value="">Todos los responsables</option></select>
+              <select id="fResp"><option value="">Todos los técnicos</option></select>
               <button class="btn btn-ghost" onclick="limpiarFiltros_D()">✕ Limpiar</button>
             </div>
             <div class="calendar" id="calendar"></div>
@@ -837,15 +837,10 @@ function navTo(page){
   if (sidebar) sidebar.style.display = (page === 'bienvenida') ? 'none' : '';
   closeSidebar();
   window.scrollTo(0,0);
-  // Al navegar a Análisis
-  if (page === 'analisis') {
-    if (esDomingo()) {
-      const wrap = document.querySelector('#page-analisis .wrap');
-      mostrarBloqueDomingo(wrap);
-    } else if (typeof actualizar === 'function') {
-      const dash = document.getElementById('dashContent');
-      if (dash && dash.style.display === 'none') actualizar();
-    }
+  // Al navegar a Análisis — siempre disponible (solo consulta)
+  if (page === 'analisis' && typeof actualizar === 'function') {
+    const dash = document.getElementById('dashContent');
+    if (dash && dash.style.display === 'none') actualizar();
   }
 }
 function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('open'); }
@@ -2264,21 +2259,28 @@ async function actualizar(){
   if(WEB_APP_URL === 'PEGA_AQUI_TU_URL'){
     showToast('Falta configurar la URL de conexión'); return;
   }
-  const btn = document.getElementById('btnActualizar');
+  const btn = document.getElementById('btnActualizarA');
   const est = document.getElementById('estadoCarga');
-  btn.disabled = true; btn.textContent = '🔄 Actualizando…';
+  if(btn){ btn.disabled = true; btn.textContent = '🔄 Actualizando…'; }
   try{
-    const res = await fetch(WEB_APP_URL + '?t=' + Date.now());
+    // Semana vigente: domingo → la que inicia mañana; lun-sáb → la de esta semana
+    const hoyA = new Date();
+    const dowA = hoyA.getDay();
+    const lunesA = new Date(hoyA);
+    lunesA.setDate(hoyA.getDate() + (dowA === 0 ? 1 : 1 - dowA));
+    const semanaVigente = calcularSemana(lunesA);
+
+    const res = await fetch(WEB_APP_URL + '?semana=' + semanaVigente + '&t=' + Date.now());
     const data = await res.json();
     if(!data.ok){ showToast('Error: ' + (data.error||'')); return; }
     archivos = (data.personas||[]);
     renderTodo();
-    est.textContent = `Actualizado: ${new Date().toLocaleString('es-GT')} · ${archivos.length} persona(s)`;
+    if(est) est.textContent = `Semana ${semanaVigente} · Actualizado: ${new Date().toLocaleString('es-GT')} · ${archivos.length} persona(s)`;
     showToast(`${archivos.length} persona(s) cargadas ✓`);
   }catch(e){
     showToast('Sin conexión con la hoja de datos');
   }finally{
-    btn.disabled = false; btn.textContent = '🔄 Actualizar programación del equipo';
+    if(btn){ btn.disabled = false; btn.textContent = '🔄 Actualizar'; }
   }
 }
 
@@ -2328,7 +2330,7 @@ function renderMeta(){
   const semanas = [...new Set(archivos.map(x=>x.semana))];
   let rango = '';
   if(a.lunesFecha){
-    const d0 = new Date(a.lunesFecha+'T12:00:00');
+    const d0 = new Date(String(a.lunesFecha).slice(0,10)+'T12:00:00');
     const d6 = new Date(d0); d6.setDate(d0.getDate()+6);
     const fmt = d => d.toLocaleDateString('es-GT',{day:'2-digit',month:'short'});
     rango = `${fmt(d0)} – ${fmt(d6)}, ${d6.getFullYear()}`;
@@ -2347,7 +2349,7 @@ function poblarFiltros_D(){
   fd.value = curD;
   const fr = document.getElementById('fResp');
   const curR = fr.value;
-  fr.innerHTML = '<option value="">Todos los responsables</option>' +
+  fr.innerHTML = '<option value="">Todos los técnicos</option>' +
     resps.map(r=>`<option value="${r}">${r}</option>`).join('');
   fr.value = curR;
 }
