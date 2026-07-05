@@ -348,7 +348,18 @@ h1{font-size:clamp(24px,3.8vw,36px);font-weight:700;margin:0 0 5px;letter-spacin
 .filtros select{padding:8px 28px 8px 11px;border:1.5px solid var(--linea);border-radius:8px;background:#fff;font-size:13px;font-family:var(--font-body);appearance:none;background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6"><path d="M0 0l5 6 5-6z" fill="%236b5e4c"/></svg>');background-repeat:no-repeat;background-position:right 10px center;}
 
 /* Calendario */
-.calendar{display:flex;flex-direction:column;gap:10px;}
+.calendar{display:block;}
+.cal-matrix{border-collapse:collapse;width:100%;font-size:11px;}
+.cal-matrix th{background:var(--cana-900);color:#fff;padding:6px 8px;font-size:10px;white-space:nowrap;border:1px solid rgba(255,255,255,.15);position:sticky;top:0;}
+.cal-matrix td{border:1px solid var(--linea);padding:3px;vertical-align:top;min-width:110px;}
+.cal-matrix .cal-dia-col{background:var(--crema);min-width:78px;position:sticky;left:0;z-index:1;padding:6px 8px;border-right:2px solid var(--cana-500);}
+.cal-matrix .cal-dia-col .dow{font-weight:700;font-size:12px;color:var(--cana-900);}
+.cal-matrix .cal-dia-col .fch{font-size:10px;color:var(--texto-suave);font-family:var(--font-mono);}
+.cal-matrix thead .cal-dia-col{background:var(--cana-900);}
+.cal-chip{background:#fff;border:1px solid var(--linea);border-left:3px solid var(--cana-500);border-radius:5px;padding:3px 5px;margin:2px 0;line-height:1.25;}
+.cal-chip b{color:var(--cana-700);font-size:10px;}
+.cal-chip span{font-size:10px;color:var(--texto);}
+
 @media(max-width:860px){.calendar{grid-template-columns:1fr;}}
 .day-col{border:1px solid var(--linea);border-radius:10px;overflow:hidden;background:#fff;min-width:0;}
 .day-head{background:var(--cana-900);color:var(--crema);padding:8px 10px;font-family:var(--font-mono);font-size:11.5px;text-align:center;}
@@ -527,7 +538,7 @@ table.det tr:hover td{background:#faf6ef;}
     <p class="nav-label">Análisis</p>
     <button class="nav-item" onclick="navTo('analisis')" id="nav-analisis"><span class="icon">📊</span>Análisis</button>
   </div>
-  <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 05/07/2026 · 10:16</span></div>
+  <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 05/07/2026 · 10:52</span></div>
 </nav>
 
 <div class="main">
@@ -2374,31 +2385,57 @@ function renderCalendar(){
   cal.innerHTML = '';
   const acts = actsFiltradas();
   const lunes = archivos[0]?.lunesFecha;
+
+  // Rango de horas según los datos (mínimo 06:00–17:00)
+  const horasActs = acts.map(a=>parseInt((a.hora||'').split(':')[0])).filter(h=>!isNaN(h));
+  const hMin = Math.min(6,  ...(horasActs.length?horasActs:[6]));
+  const hMax = Math.max(17, ...(horasActs.length?horasActs:[17]));
+
+  const tabla = document.createElement('table');
+  tabla.className = 'cal-matrix';
+
+  // Encabezado: Horarios
+  const thead = document.createElement('thead');
+  let headHTML = '<tr><th class="cal-dia-col">Día</th>';
+  for(let h=hMin; h<=hMax; h++){
+    const ampm = h<12 ? (h+':00 a.m.') : ((h===12?12:h-12)+':00 p.m.');
+    headHTML += `<th>${ampm}</th>`;
+  }
+  headHTML += '</tr>';
+  thead.innerHTML = headHTML;
+  tabla.appendChild(thead);
+
+  // Filas: un día por fila
+  const tbody = document.createElement('tbody');
   DIAS_D.forEach((nombre, i)=>{
-    const col = document.createElement('div'); col.className='day-col';
     let fchStr='';
     if(lunes){
       const d=new Date(String(lunes).slice(0,10)+'T12:00:00'); d.setDate(d.getDate()+i);
       fchStr=d.toLocaleDateString('es-GT',{day:'2-digit',month:'2-digit'});
     }
-    const head=document.createElement('div'); head.className='day-head';
-    head.innerHTML=`<div class="dow">${nombre}</div><div class="fch" style="font-size:11px;opacity:.85;">${fchStr}</div>`;
-    col.appendChild(head);
-    const body=document.createElement('div'); body.className='day-body';
-    const actsDia = acts.filter(a=>a.diaIndex===i).sort((a,b)=>(a.hora||'').localeCompare(b.hora||''));
-    if(!actsDia.length){
-      const e=document.createElement('div'); e.className='day-empty'; e.textContent='Sin actividades'; body.appendChild(e);
-    } else {
-      actsDia.forEach(act=>{
-        const slot=document.createElement('div'); slot.className='slot';
-        slot.style.borderLeftColor=colorDepto(act.departamento||'');
-        slot.innerHTML=`<div class="hora">${act.hora||'s/h'}</div><div class="act">${act.actividad}</div><div class="meta"><span class="resp">${act.responsable}</span>${act.lugar?' · '+act.lugar:''}</div><span class="dept-tag" style="background:${colorDepto(act.departamento||'')}">${act.departamento||'N/A'}</span>`;
-        body.appendChild(slot);
-      });
+    const tr = document.createElement('tr');
+    let rowHTML = `<td class="cal-dia-col"><div class="dow">${nombre}</div><div class="fch">${fchStr}</div></td>`;
+
+    const actsDia = acts.filter(a=>a.diaIndex===i);
+    for(let h=hMin; h<=hMax; h++){
+      const enHora = actsDia
+        .filter(a=>parseInt((a.hora||'').split(':')[0])===h)
+        .sort((a,b)=>(a.hora||'').localeCompare(b.hora||''));
+      const chips = enHora.map(a=>
+        `<div class="cal-chip" style="border-left-color:${colorDepto(a.departamento||'')}" title="${a.hora} · ${a.responsable}\n${a.actividad}\n${a.lugar||''}">`+
+        `<b>${a.hora}</b> ${a.responsable.split(' ')[0]}<br><span>${a.actividad}</span></div>`
+      ).join('');
+      rowHTML += `<td>${chips}</td>`;
     }
-    col.appendChild(body);
-    cal.appendChild(col);
+    tr.innerHTML = rowHTML;
+    tbody.appendChild(tr);
   });
+  tabla.appendChild(tbody);
+
+  const scroller = document.createElement('div');
+  scroller.style.cssText = 'overflow-x:auto;';
+  scroller.appendChild(tabla);
+  cal.appendChild(scroller);
 }
 
 function renderBarChart(id, dataObj, colorFn){
