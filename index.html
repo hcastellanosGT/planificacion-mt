@@ -538,7 +538,7 @@ table.det tr:hover td{background:#faf6ef;}
     <p class="nav-label">Análisis</p>
     <button class="nav-item" onclick="navTo('analisis')" id="nav-analisis"><span class="icon">📊</span>Análisis</button>
   </div>
-  <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 05/07/2026 · 10:52</span></div>
+  <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 05/07/2026 · 11:10</span></div>
 </nav>
 
 <div class="main">
@@ -2386,26 +2386,27 @@ function renderCalendar(){
   const acts = actsFiltradas();
   const lunes = archivos[0]?.lunesFecha;
 
-  // Rango de horas según los datos (mínimo 06:00–17:00)
-  const horasActs = acts.map(a=>parseInt((a.hora||'').split(':')[0])).filter(h=>!isNaN(h));
-  const hMin = Math.min(6,  ...(horasActs.length?horasActs:[6]));
-  const hMax = Math.max(17, ...(horasActs.length?horasActs:[17]));
+  // Bloques horarios
+  const BLOQUES = [
+    {nombre:'Madrugada', sub:'00:00–05:59', ini:0,  fin:5},
+    {nombre:'Mañana',    sub:'06:00–10:59', ini:6,  fin:10},
+    {nombre:'Medio día', sub:'11:00–13:59', ini:11, fin:13},
+    {nombre:'Tarde',     sub:'14:00–18:59', ini:14, fin:18},
+    {nombre:'Noche',     sub:'19:00–23:59', ini:19, fin:23},
+  ];
 
   const tabla = document.createElement('table');
   tabla.className = 'cal-matrix';
 
-  // Encabezado: Horarios
   const thead = document.createElement('thead');
   let headHTML = '<tr><th class="cal-dia-col">Día</th>';
-  for(let h=hMin; h<=hMax; h++){
-    const ampm = h<12 ? (h+':00 a.m.') : ((h===12?12:h-12)+':00 p.m.');
-    headHTML += `<th>${ampm}</th>`;
-  }
+  BLOQUES.forEach(b=>{
+    headHTML += `<th>${b.nombre}<br><span style="font-weight:400;font-size:9px;opacity:.8;">${b.sub}</span></th>`;
+  });
   headHTML += '</tr>';
   thead.innerHTML = headHTML;
   tabla.appendChild(thead);
 
-  // Filas: un día por fila
   const tbody = document.createElement('tbody');
   DIAS_D.forEach((nombre, i)=>{
     let fchStr='';
@@ -2417,16 +2418,17 @@ function renderCalendar(){
     let rowHTML = `<td class="cal-dia-col"><div class="dow">${nombre}</div><div class="fch">${fchStr}</div></td>`;
 
     const actsDia = acts.filter(a=>a.diaIndex===i);
-    for(let h=hMin; h<=hMax; h++){
-      const enHora = actsDia
-        .filter(a=>parseInt((a.hora||'').split(':')[0])===h)
-        .sort((a,b)=>(a.hora||'').localeCompare(b.hora||''));
-      const chips = enHora.map(a=>
+    BLOQUES.forEach(b=>{
+      // Actividades dentro del bloque, ordenadas por su hora real
+      const enBloque = actsDia
+        .filter(a=>{ const h=parseInt((a.hora||'').split(':')[0]); return !isNaN(h) && h>=b.ini && h<=b.fin; })
+        .sort((a,x)=>(a.hora||'').localeCompare(x.hora||''));
+      const chips = enBloque.map(a=>
         `<div class="cal-chip" style="border-left-color:${colorDepto(a.departamento||'')}" title="${a.hora} · ${a.responsable}\n${a.actividad}\n${a.lugar||''}">`+
         `<b>${a.hora}</b> ${a.responsable.split(' ')[0]}<br><span>${a.actividad}</span></div>`
       ).join('');
       rowHTML += `<td>${chips}</td>`;
-    }
+    });
     tr.innerHTML = rowHTML;
     tbody.appendChild(tr);
   });
