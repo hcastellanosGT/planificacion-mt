@@ -538,7 +538,7 @@ table.det tr:hover td{background:#faf6ef;}
     <p class="nav-label">Análisis</p>
     <button class="nav-item" onclick="navTo('analisis')" id="nav-analisis"><span class="icon">📊</span>Análisis</button>
   </div>
-  <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 05/07/2026 · 11:10</span></div>
+  <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 05/07/2026 · 11:26</span></div>
 </nav>
 
 <div class="main">
@@ -655,15 +655,9 @@ table.det tr:hover td{background:#faf6ef;}
       <div><p class="eyebrow">División Agrícola · Madre Tierra</p><h1>Análisis</h1><p class="sub">Planificación de la semana en curso e historial de ejecución.</p></div>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-ghost" id="btnActualizarA" onclick="actualizar()" style="border-color:rgba(255,255,255,.4);color:#fff;">🔄 Actualizar</button>
-        <button class="btn btn-ghost" id="btnCargarH" onclick="cargarDatos()" style="border-color:rgba(255,255,255,.4);color:#fff;">📈 Historial</button>
-      </div>
+        </div>
     </div></div>
     <div class="wrap">
-      <!-- Tabs -->
-      <div class="card" style="padding:6px 8px;margin-bottom:16px;display:flex;gap:4px;flex-wrap:wrap;">
-        <button class="tab active" id="tabDash" onclick="switchAnalisis('dash')" style="border-radius:8px;border-bottom:none;padding:10px 18px;">📋 Planificación actual</button>
-        <button class="tab" id="tabHist" onclick="switchAnalisis('hist')" style="border-radius:8px;border-bottom:none;padding:10px 18px;">📈 Historial</button>
-      </div>
       <!-- Panel semana actual -->
       <div id="panelDash">
         <div class="card" style="margin-bottom:16px;">
@@ -697,61 +691,7 @@ table.det tr:hover td{background:#faf6ef;}
         <div class="empty-state" id="emptyState"><div class="ico">🌾</div><p>Cargando la planificación del equipo...</p></div>
       </div>
       <!-- Panel historial -->
-      <div id="panelHist" style="display:none;">
-        <div class="card">
-          <div class="filtros-grid">
-            <div class="filtro-group"><label>Desde</label><input type="date" id="fDesde"></div>
-            <div class="filtro-group"><label>Hasta</label><input type="date" id="fHasta"></div>
-            <div class="filtro-group"><label>Departamento</label><select id="fDepto_H"><option value="">Todos</option></select></div>
-            <div class="filtro-group"><label>Responsable</label><select id="fResp_H"><option value="">Todos</option></select></div>
-            <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
-              <button class="btn btn-primary" onclick="aplicarFiltros()">Filtrar</button>
-              <button class="btn btn-ghost" onclick="limpiarFiltros_H()">Limpiar</button>
-            </div>
-          </div>
-        </div>
-        <div class="loading-bar" id="loadingBar" style="display:none;"><div class="loading-fill"></div></div>
-        <div id="contenido" style="display:none;">
-          <div class="stats-row" id="statsRow_H2"></div>
-          <div class="card">
-            <div class="tabs">
-              <button class="tab active" onclick="cambiarTab('resumen')">Resumen</button>
-              <button class="tab" onclick="cambiarTab('personas')">Por persona</button>
-              <button class="tab" onclick="cambiarTab('areas')">Por área</button>
-              <button class="tab" onclick="cambiarTab('semanas')">Por semana</button>
-              <button class="tab" onclick="cambiarTab('detalle')">Detalle</button>
-            </div>
-            <div class="tab-panel active" id="tab-resumen">
-              <div class="charts-2col">
-                <div><p class="chart-titulo">Por departamento</p><div id="chartDepto_H"></div></div>
-                <div><p class="chart-titulo">Áreas más visitadas</p><div id="chartAreas_H"></div></div>
-              </div>
-              <div style="margin-top:20px;" class="charts-2col">
-                <div><p class="chart-titulo">Estados</p><div id="chartEstados_H"></div></div>
-                <div><p class="chart-titulo">Temas frecuentes</p><div id="chartTemas_H"></div></div>
-              </div>
-            </div>
-            <div class="tab-panel" id="tab-personas"><div class="pers-grid" id="persGrid"></div></div>
-            <div class="tab-panel" id="tab-areas">
-              <div class="charts-2col">
-                <div><p class="chart-titulo">Top 20 áreas</p><div id="chartAreasDetalle"></div></div>
-                <div><p class="chart-titulo">Por zona</p><div id="chartZonas"></div></div>
-              </div>
-            </div>
-            <div class="tab-panel" id="tab-semanas"><div id="semanasList"></div></div>
-            <div class="tab-panel" id="tab-detalle">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
-                <span id="detalleConteo" style="font-size:12px;color:var(--texto-suave);font-family:var(--font-mono);"></span>
-                <button class="btn btn-ghost" onclick="exportarCSV()" style="font-size:12px;padding:7px 12px;">⬇ Exportar CSV</button>
-              </div>
-              <div class="tabla-wrap">
-                <table class="det"><thead><tr><th>Semana</th><th>Fecha</th><th>Hora</th><th>Responsable</th><th>Departamento</th><th>Lugar</th><th>Tema</th><th>Actividad</th><th>Estado</th><th>Observación</th></tr></thead><tbody id="tablaDetalle"></tbody></table>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="empty-state" id="emptyStateH"><div class="ico">📊</div><p>Presiona "📈 Historial" para cargar el registro histórico.</p></div>
-      </div>
+      
     </div>
   </div>
 
@@ -798,13 +738,7 @@ function mostrarBloqueDomingo(contenedor) {
   contenedor.appendChild(div);
 }
 
-function switchAnalisis(tab) {
-  const isDash = tab === 'dash';
-  document.getElementById('panelDash').style.display = isDash ? '' : 'none';
-  document.getElementById('panelHist').style.display = isDash ? 'none' : '';
-  document.getElementById('tabDash').classList.toggle('active', isDash);
-  document.getElementById('tabHist').classList.toggle('active', !isDash);
-}
+
 
 
 // ── ANÁLISIS: switch entre semana actual e historial ─────────────────────────
@@ -826,7 +760,7 @@ function switchAnalisis(tab) {
 
 
 
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzysy7KSuy3Mnwk9vDaws-dUpcK5Tac1ReGh69vXWL6vyJ8MkEPYA4w9qOJWJOsfB9JGA/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbw0sNnQm_7gtw7UP9xRoIOyTMqlh5d5AGW0IQrj9_hdaFTSpovhp3AUrJy7xlkm-F8I/exec';
 
 // Variables globales compartidas
 let archivos = [];
@@ -2523,38 +2457,7 @@ function jornadaColor_H(hora){
 function deptColor(d){ return DEPT_COLOR[d]||'#6b5e4c'; }
 
 
-// ── Cargar datos ────────────────────────────────────────────────────
-async function cargarDatos(){
-  if(WEB_APP_URL==='PEGA_AQUI_TU_URL'){ showToast('Configura la URL de la Web App primero'); return; }
-  document.getElementById('loadingBar').style.display='block';
-  document.getElementById('emptyState').style.display='none';
-  document.getElementById('contenido').style.display='none';
-  (document.getElementById('btnCargar')||{}).disabled=true;
-  try{
-    const res = await fetch(WEB_APP_URL+'?modo=historico&t='+Date.now());
-    const data = await res.json();
-    if(!data.ok) throw new Error(data.error||'Error desconocido');
-    registrosTodos = data.registros||[];
-    poblarFiltros_H();
-    aplicarFiltros();
-    showToast(`${registrosTodos.length} registros cargados ✓`);
-  }catch(e){
-    showToast('Error al cargar: '+e.message);
-    document.getElementById('emptyState').style.display='block';
-  }finally{
-    document.getElementById('loadingBar').style.display='none';
-    (document.getElementById('btnCargar')||{}).disabled=false;
-  }
-}
 
-function poblarFiltros_H(){
-  const deptos = [...new Set(registrosTodos.map(r=>r.departamento).filter(Boolean))].sort();
-  const resps  = [...new Set(registrosTodos.map(r=>r.responsable).filter(Boolean))].sort();
-  const fd=document.getElementById('fDepto_H');
-  fd.innerHTML='<option value="">Todos</option>'+deptos.map(d=>`<option>${d}</option>`).join('');
-  const fr=document.getElementById('fResp_H');
-  fr.innerHTML='<option value="">Todos</option>'+resps.map(r=>`<option>${r}</option>`).join('');
-}
 
 function aplicarFiltros(){
   const desde = document.getElementById('fDesde').value;
@@ -2578,12 +2481,7 @@ function aplicarFiltros(){
   }
 }
 
-function limpiarFiltros_H(){
-  ['fDesde','fHasta'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('fDepto_H').value='';
-  document.getElementById('fResp_H').value='';
-  aplicarFiltros();
-}
+
 
 // ── Stats ───────────────────────────────────────────────────────────
 function renderStats_H(){
