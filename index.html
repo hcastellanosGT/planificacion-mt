@@ -348,7 +348,7 @@ h1{font-size:clamp(24px,3.8vw,36px);font-weight:700;margin:0 0 5px;letter-spacin
 .filtros select{padding:8px 28px 8px 11px;border:1.5px solid var(--linea);border-radius:8px;background:#fff;font-size:13px;font-family:var(--font-body);appearance:none;background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6"><path d="M0 0l5 6 5-6z" fill="%236b5e4c"/></svg>');background-repeat:no-repeat;background-position:right 10px center;}
 
 /* Calendario */
-.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;overflow-x:auto;}
+.calendar{display:flex;flex-direction:column;gap:10px;}
 @media(max-width:860px){.calendar{grid-template-columns:1fr;}}
 .day-col{border:1px solid var(--linea);border-radius:10px;overflow:hidden;background:#fff;min-width:0;}
 .day-head{background:var(--cana-900);color:var(--crema);padding:8px 10px;font-family:var(--font-mono);font-size:11.5px;text-align:center;}
@@ -527,7 +527,7 @@ table.det tr:hover td{background:#faf6ef;}
     <p class="nav-label">Análisis</p>
     <button class="nav-item" onclick="navTo('analisis')" id="nav-analisis"><span class="icon">📊</span>Análisis</button>
   </div>
-  <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 05/07/2026 · 10:10</span></div>
+  <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 05/07/2026 · 10:16</span></div>
 </nav>
 
 <div class="main">
@@ -2242,7 +2242,7 @@ async function guardarEnLaNube_E(){
 
 // DASHBOARD
 // ─── CONFIGURACIÓN ────────────────────────────────────────────────────────────
-const DIAS_D = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+const DIAS_D = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 
 // Colores por departamento
 const COLORES_DEPTO = {
@@ -2378,11 +2378,11 @@ function renderCalendar(){
     const col = document.createElement('div'); col.className='day-col';
     let fchStr='';
     if(lunes){
-      const d=new Date(lunes+'T12:00:00'); d.setDate(d.getDate()+i);
+      const d=new Date(String(lunes).slice(0,10)+'T12:00:00'); d.setDate(d.getDate()+i);
       fchStr=d.toLocaleDateString('es-GT',{day:'2-digit',month:'2-digit'});
     }
     const head=document.createElement('div'); head.className='day-head';
-    head.innerHTML=`<span class="dow">${nombre}</span><span class="fch">${fchStr}</span>`;
+    head.innerHTML=`<div class="dow">${nombre}</div><div class="fch" style="font-size:11px;opacity:.85;">${fchStr}</div>`;
     col.appendChild(head);
     const body=document.createElement('div'); body.className='day-body';
     const actsDia = acts.filter(a=>a.diaIndex===i).sort((a,b)=>(a.hora||'').localeCompare(b.hora||''));
