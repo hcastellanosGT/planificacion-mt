@@ -295,7 +295,7 @@ table.det tr:hover td{background:#faf6ef;}
     <button class="nav-item" onclick="navTo('planificacion')" id="nav-planificacion"><span class="icon">📝</span>Planificación</button>
     <button class="nav-item" onclick="navTo('ejecucion')" id="nav-ejecucion"><span class="icon">✅</span>Ejecución</button>
   </div>
-  <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 09/07/2026 · 13:57</span></div>
+  <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 09/07/2026 · 15:04</span></div>
 </nav>
 
 <div class="main">
@@ -520,7 +520,7 @@ function mostrarBloqueDomingo(contenedor) {
 
 
 
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxIERFTpWCq69ps_O-wMnoSYcjXVFowqWo_kaQylqn1aYD5VZRg-nawS3-kj_V-UCf5rQ/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyWcT8tQmC_0iFiC1gFGBvdhONKDdHW3YR_pJXgd41IfRQo5cF0F3kXciiuZ-AoAmAgSw/exec';
 
 // Variables globales compartidas
 let archivos = [];
@@ -953,7 +953,8 @@ function recolectar_P() {
     zafra: String(zafraCalculada),
     semana: String(semanaCalculada),
     lunesFecha: document.getElementById('selLunes').value,
-    actividades
+    actividades,
+    tipo: 'planificacion'
   };
 }
 
