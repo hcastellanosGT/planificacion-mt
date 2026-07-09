@@ -295,7 +295,7 @@ table.det tr:hover td{background:#faf6ef;}
     <button class="nav-item" onclick="navTo('planificacion')" id="nav-planificacion"><span class="icon">📝</span>Planificación</button>
     <button class="nav-item" onclick="navTo('ejecucion')" id="nav-ejecucion"><span class="icon">✅</span>Ejecución</button>
   </div>
-  <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 08/07/2026 · 20:35</span></div>
+  <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 09/07/2026 · 13:57</span></div>
 </nav>
 
 <div class="main">
@@ -474,6 +474,9 @@ table.det tr:hover td{background:#faf6ef;}
       </div>
     </div>
   </div>
+
+</div>
+
 <script>
 
 // ── BLOQUEO DOMINGO ──────────────────────────────────────────────────────────
@@ -517,7 +520,7 @@ function mostrarBloqueDomingo(contenedor) {
 
 
 
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyEec-CI-6COZ_7uuxafmx67MyVWSmcUBmJTkp4Dc4rmGQ--u5fwsZ-awJSjfARAOcw9Q/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxIERFTpWCq69ps_O-wMnoSYcjXVFowqWo_kaQylqn1aYD5VZRg-nawS3-kj_V-UCf5rQ/exec';
 
 // Variables globales compartidas
 let archivos = [];
@@ -999,15 +1002,7 @@ function recuperarBorrador() {
 
 // ─── LÍMITE DE ENTREGA (sábado 23:59) ────────────────────────────────────────
 // Devuelve el próximo sábado a las 23:59:59 a partir de hoy.
-function proximoCierre() {
-  const ahora = new Date();
-  const dow = ahora.getDay(); // 0=dom, 6=sáb
-  const diasHastaSab = (6 - dow + 7) % 7; // 0 si hoy es sábado
-  const sab = new Date(ahora);
-  sab.setDate(ahora.getDate() + diasHastaSab);
-  sab.setHours(23, 59, 59, 0);
-  return sab;
-}
+
 
 
 
@@ -1923,6 +1918,7 @@ function recolectar_E(){
 async function guardarEnLaNube_E(){
   const payload=recolectar_E();
   if(!payload.responsable){ showToast('Selecciona tu nombre'); return; }
+  if(!payload.actividades.length){ showToast('No hay actividades para guardar'); return; }
   if(WEB_APP_URL==='PEGA_AQUI_TU_URL'){ showToast('Falta configurar la URL'); return; }
   const btn=document.getElementById('btnGuardar_E'); const msg=document.getElementById('estadoMsg_E');
   btn.disabled=true; btn.textContent='Guardando…';
@@ -2200,236 +2196,48 @@ const EST_STYLE = {
   'No planificada':{bg:'var(--e-nopl)',b:'var(--e-nopl-b)',t:'var(--e-nopl-t)'},
 };
 
-function estPill(estado){
-  const s = EST_STYLE[estado] || EST_STYLE['Planificado'];
-  return `<span class="est-pill" style="background:${s.bg};border-color:${s.b};color:${s.t};">${estado}</span>`;
-}
-function jornadaColor_H(hora){
-  if(!hora) return '#6B7280';
-  const h=parseInt(hora.split(':')[0],10);
-  if(h>=5&&h<12) return '#2563EB';
-  if(h>=12&&h<19) return '#EA580C';
-  return '#334155';
-}
-function deptColor(d){ return DEPT_COLOR[d]||'#6b5e4c'; }
 
 
 
 
-function aplicarFiltros(){
-  const desde = document.getElementById('fDesde').value;
-  const hasta  = document.getElementById('fHasta').value;
-  const depto  = document.getElementById('fDepto_H').value;
-  const resp   = document.getElementById('fResp_H').value;
 
-  registrosFiltrados = registrosTodos.filter(r=>{
-    if(depto && r.departamento!==depto) return false;
-    if(resp  && r.responsable!==resp)   return false;
-    if(desde && r.lunesFecha < desde)   return false;
-    if(hasta && r.lunesFecha > hasta)   return false;
-    return true;
-  });
 
-  document.getElementById('contenido').style.display = registrosFiltrados.length ? 'block' : 'none';
-  document.getElementById('emptyState').style.display = registrosFiltrados.length ? 'none' : 'block';
-  if(registrosFiltrados.length){
-    renderStats_H();
-    renderTabActiva();
-  }
-}
+
+
 
 
 
 // ── Stats ───────────────────────────────────────────────────────────
-function renderStats_H(){
-  const r = registrosFiltrados;
-  const total    = r.length;
-  const realizadas = r.filter(x=>x.estado==='Realizada').length;
-  const noplan   = r.filter(x=>x.noPlaneada).length;
-  const semanas  = new Set(r.map(x=>x.semana)).size;
-  const personas = new Set(r.map(x=>x.responsable)).size;
-  const pct      = total ? Math.round(realizadas/total*100) : 0;
 
-  document.getElementById('statsRow').innerHTML=`
-    <div class="stat"><div class="lbl">Total actividades</div><div class="val">${total}</div><div class="sub">en el período</div></div>
-    <div class="stat"><div class="lbl">Realizadas</div><div class="val" style="color:#14532D">${realizadas}</div><div class="sub">${pct}% del total</div></div>
-    <div class="stat"><div class="lbl">No planificadas</div><div class="val" style="color:#4C1D95">${noplan}</div><div class="sub">emergencias de campo</div></div>
-    <div class="stat"><div class="lbl">Semanas</div><div class="val">${semanas}</div><div class="sub">en el período</div></div>
-    <div class="stat"><div class="lbl">Personas</div><div class="val">${personas}</div><div class="sub">activas</div></div>
-  `;
-}
 
 // ── Tabs ────────────────────────────────────────────────────────────
-function cambiarTab(tab){
-  tabActiva = tab;
-  document.querySelectorAll('.tab').forEach((t,i)=>{
-    const tabs=['resumen','personas','areas','semanas','detalle'];
-    t.classList.toggle('active', tabs[i]===tab);
-  });
-  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
-  document.getElementById('tab-'+tab).classList.add('active');
-  renderTabActiva();
-}
 
-function renderTabActiva(){
-  if(tabActiva==='resumen')   renderResumen();
-  if(tabActiva==='personas')  renderPersonas();
-  if(tabActiva==='areas')     renderAreas();
-  if(tabActiva==='semanas')   renderSemanas();
-  if(tabActiva==='detalle')   renderDetalle();
-}
+
+
 
 // ── Helpers gráficas ────────────────────────────────────────────────
-function contarPor(campo, top=12){
-  const c={};
-  registrosFiltrados.forEach(r=>{ const v=r[campo]||'Sin especificar'; c[v]=(c[v]||0)+1; });
-  return Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,top);
-}
 
-function barChart(containerId, entries, colorFn, labelW=140){
-  const cont=document.getElementById(containerId); if(!cont) return;
-  const max=entries.length?entries[0][1]:1;
-  cont.innerHTML='';
-  if(!entries.length){ cont.innerHTML='<p style="color:var(--texto-suave);font-size:12px;">Sin datos.</p>'; return; }
-  entries.forEach(([label,count])=>{
-    const pct=Math.max(6,(count/max)*100);
-    const color=colorFn?colorFn(label):'var(--terracota)';
-    const lbl=label.length>24?label.slice(0,23)+'…':label;
-    const row=document.createElement('div'); row.className='bar-row';
-    row.innerHTML=`<div class="bar-label" style="width:${labelW}px" title="${label}">${lbl}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"><span>${count}</span></div></div>`;
-    cont.appendChild(row);
-  });
-}
+
+
 
 // ── Resumen ─────────────────────────────────────────────────────────
-function renderResumen(){
-  barChart('chartDepto_H', contarPor('departamento',6), d=>deptColor(d), 160);
-  barChart('chartAreas_H', contarPor('lugar',10), ()=>var_terracota(), 160);
-  barChart('chartEstados_H', contarPor('estado',5), e=>EST_COLOR[e]||'#888', 120);
-  barChart('chartTemas_H', contarPor('tema',10), ()=>'var(--cana-500)', 160);
-}
-function var_terracota(){ return '#c1652f'; }
+
+
 
 // ── Personas ─────────────────────────────────────────────────────────
-function renderPersonas(){
-  const grid=document.getElementById('persGrid'); grid.innerHTML='';
-  const porPersona={};
-  registrosFiltrados.forEach(r=>{
-    if(!porPersona[r.responsable]) porPersona[r.responsable]={depto:r.departamento,estados:{},areas:{},total:0};
-    const p=porPersona[r.responsable];
-    p.total++;
-    p.estados[r.estado]=(p.estados[r.estado]||0)+1;
-    const area=(r.lugar||'Sin especificar').trim();
-    p.areas[area]=(p.areas[area]||0)+1;
-  });
-  Object.entries(porPersona).sort((a,b)=>a[1].depto.localeCompare(b[1].depto)||a[0].localeCompare(b[0])).forEach(([nombre,d])=>{
-    const topArea=Object.entries(d.areas).sort((a,b)=>b[1]-a[1])[0];
-    const realizadas=d.estados['Realizada']||0;
-    const pct=d.total?Math.round(realizadas/d.total*100):0;
-    const card=document.createElement('div'); card.className='pers-card';
-    const statsHtml=Object.entries(d.estados).map(([est,cnt])=>{
-      const s=EST_STYLE[est]||EST_STYLE['Planificado'];
-      return `<span class="pers-stat" style="background:${s.bg};border-color:${s.b};color:${s.t};">${est}: ${cnt}</span>`;
-    }).join('');
-    card.innerHTML=`
-      <div class="pers-name">${nombre}</div>
-      <div class="pers-depto" style="color:${deptColor(d.depto)}">${d.depto}</div>
-      <div style="font-size:11px;color:var(--texto-suave);margin-bottom:8px;">${d.total} actividades · ${pct}% realizadas · Área principal: ${topArea?topArea[0]:'—'}</div>
-      <div class="pers-stats">${statsHtml}</div>
-    `;
-    grid.appendChild(card);
-  });
-  if(!grid.children.length) grid.innerHTML='<div class="empty"><p>Sin datos para los filtros seleccionados.</p></div>';
-}
+
 
 // ── Áreas ────────────────────────────────────────────────────────────
-function renderAreas(){
-  barChart('chartAreasDetalle', contarPor('lugar',20), ()=>'var(--terracota)', 160);
-  // Agrupado por zona principal (quitar el detalle después del ":")
-  const c={};
-  registrosFiltrados.forEach(r=>{
-    const lugar=(r.lugar||'Sin especificar').split(':')[0].trim();
-    c[lugar]=(c[lugar]||0)+1;
-  });
-  const entries=Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,12);
-  barChart('chartZonas', entries, ()=>'var(--cana-500)', 120);
-}
+
 
 // ── Semanas ──────────────────────────────────────────────────────────
-function renderSemanas(){
-  const cont=document.getElementById('semanasList'); cont.innerHTML='';
-  const porSemana={};
-  registrosFiltrados.forEach(r=>{
-    const k=r.semana+'||'+r.lunesFecha;
-    if(!porSemana[k]) porSemana[k]={semana:r.semana,lunesFecha:r.lunesFecha,total:0,estados:{},personas:new Set()};
-    const s=porSemana[k]; s.total++;
-    s.estados[r.estado]=(s.estados[r.estado]||0)+1;
-    s.personas.add(r.responsable);
-  });
-  const semanas=Object.values(porSemana).sort((a,b)=>Number(b.semana)-Number(a.semana));
-  if(!semanas.length){ cont.innerHTML='<div class="empty"><p>Sin datos.</p></div>'; return; }
-  semanas.forEach(s=>{
-    const realizadas=s.estados['Realizada']||0;
-    const pct=s.total?Math.round(realizadas/s.total*100):0;
-    const fmtL=s.lunesFecha?new Date(s.lunesFecha+'T12:00:00').toLocaleDateString('es-GT',{day:'2-digit',month:'short'}):'';
-    const sab=s.lunesFecha?(()=>{const d=new Date(s.lunesFecha+'T12:00:00');d.setDate(d.getDate()+5);return d.toLocaleDateString('es-GT',{day:'2-digit',month:'short'});})():'';
-    const estadosHtml=Object.entries(s.estados).map(([est,cnt])=>{
-      const style=EST_STYLE[est]||EST_STYLE['Planificado'];
-      return `<span class="mini-pill" style="background:${style.bg};border-color:${style.b};color:${style.t};">${est}: ${cnt}</span>`;
-    }).join('');
-    const wrap=document.createElement('div'); wrap.className='semana-row';
-    wrap.innerHTML=`
-      <div class="semana-head"><span>Semana ${s.semana}</span><span class="fch">${fmtL} – ${sab} · ${s.personas.size} personas · ${s.total} actividades</span></div>
-      <div class="semana-body">
-        ${estadosHtml}
-        <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
-          <span style="font-size:11px;color:var(--texto-suave);">${pct}% realizadas</span>
-          <div class="pct-bar"><div class="pct-fill" style="width:${pct}%"></div></div>
-        </div>
-      </div>`;
-    cont.appendChild(wrap);
-  });
-}
+
 
 // ── Detalle ──────────────────────────────────────────────────────────
-function renderDetalle(){
-  const tbody=document.getElementById('tablaDetalle'); tbody.innerHTML='';
-  document.getElementById('detalleConteo').textContent=`${registrosFiltrados.length} registros`;
-  const sorted=[...registrosFiltrados].sort((a,b)=>Number(b.semana)-Number(a.semana)||a.responsable.localeCompare(b.responsable)||(a.diaIndex-b.diaIndex));
-  sorted.forEach(r=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML=`
-      <td style="font-family:var(--font-mono);font-size:11px;">${r.semana}</td>
-      <td style="font-size:11px;">${r.fecha||'—'}</td>
-      <td><span class="hora-chip" style="background:${jornadaColor_H(r.hora)}">${r.hora||'s/h'}</span></td>
-      <td style="font-weight:600;">${r.responsable}</td>
-      <td><span style="font-size:10px;color:${deptColor(r.departamento)};font-weight:600;">${r.departamento||'—'}</span></td>
-      <td><span class="act-tag">${r.lugar||'—'}</span></td>
-      <td><span class="act-tag">${r.tema||'—'}</span></td>
-      <td style="max-width:220px;">${r.actividad||'—'}</td>
-      <td>${estPill(r.estado)}</td>
-      <td style="font-size:11px;color:var(--texto-suave);max-width:160px;">${r.observacion||''}</td>
-    `;
-    tbody.appendChild(tr);
-  });
-  if(!sorted.length) tbody.innerHTML='<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--texto-suave);">Sin registros para los filtros seleccionados.</td></tr>';
-}
+
 
 // ── Exportar CSV ─────────────────────────────────────────────────────
-function exportarCSV(){
-  const cols=['semana','lunesFecha','dia','fecha','hora','responsable','departamento','lugar','tema','actividad','estado','observacion','noPlaneada'];
-  const hdr=cols.join(',');
-  const rows=registrosFiltrados.map(r=>cols.map(c=>{
-    const v=String(r[c]??'').replace(/"/g,'""');
-    return `"${v}"`;
-  }).join(','));
-  const csv='\uFEFF'+hdr+'\n'+rows.join('\n');
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=url; a.download=`ejecucion_historico_${new Date().toISOString().slice(0,10)}.csv`;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-  showToast('CSV exportado ✓');
-}
+
 
 // ── INICIO DE LA APP ─────────────────────────────────────────────────────────
 // La app abre directo en la planificación del equipo
