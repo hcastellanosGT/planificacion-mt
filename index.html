@@ -295,7 +295,7 @@ table.det tr:hover td{background:#faf6ef;}
     <button class="nav-item" onclick="navTo('planificacion')" id="nav-planificacion"><span class="icon">📝</span>Planificación</button>
     <button class="nav-item" onclick="navTo('ejecucion')" id="nav-ejecucion"><span class="icon">✅</span>Ejecución</button>
   </div>
-  <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 09/07/2026 · 15:04</span></div>
+  <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 09/07/2026 · 16:32</span></div>
 </nav>
 
 <div class="main">
@@ -520,7 +520,7 @@ function mostrarBloqueDomingo(contenedor) {
 
 
 
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyWcT8tQmC_0iFiC1gFGBvdhONKDdHW3YR_pJXgd41IfRQo5cF0F3kXciiuZ-AoAmAgSw/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzfiApGCUTb4cpZwPoWhYyHPH84mFazqK3Tt5Llk9L8oYuAHtByxKbHPJf0xfwQTSb78A/exec';
 
 // Variables globales compartidas
 let archivos = [];
@@ -578,21 +578,7 @@ function normalizarHora(v) {
 // PLANIFICACIÓN
 // ─── CONFIGURACIÓN ───────────────────────────────────────────────────────────
 // Equipo — nombre : departamento
-const EQUIPO = {
-  'Alejandro Callejas'  : 'Subgerencia de Producción',
-  'Armando Reyes'       : 'Mecanización',
-  'Elvido Flores'       : 'Subgerencia de Producción',
-  'Elvis Ruiz'          : 'Malezas y Madurantes',
-  'Elmer Gonzalez'      : 'Investigación',
-  'Franklin Cobo'       : 'Malezas y Madurantes',
-  'Hugo Castellanos'    : 'Mecanización',
-  'Jose V. Gomez'       : 'Investigación',
-  'Luis Las'            : 'Investigación',
-  'Manuel Corado'       : 'Malezas y Madurantes',
-  'Misael Perez'        : 'SIG',
-  'Omar Gomez'          : 'Riego',
-  'Ricardo Juarez'      : 'Riego',
-};
+let EQUIPO = {}; // se llena dinámicamente desde la hoja "Equipo" del Sheet
 
 // Zonas / lugares
 const ZONAS = [
@@ -674,14 +660,25 @@ function calcularSemana(lunesFecha) {
   return semana;
 }
 
-// ─── POPULATE SELECTS ─────────────────────────────────────────────────────────
+// ─── POPULATE SELECTS (dinámico, desde la hoja "Equipo") ────────────────────
 const selR = document.getElementById('selResponsable');
-Object.keys(EQUIPO).sort().forEach(nombre => {
-  const opt = document.createElement('option');
-  opt.value = nombre;
-  opt.textContent = nombre;
-  selR.appendChild(opt);
-});
+async function cargarEquipoSelect() {
+  try {
+    const res = await fetch(WEB_APP_URL + '?modo=equipo&t=' + Date.now());
+    const data = await res.json();
+    if (data.ok && data.equipo) {
+      EQUIPO = {};
+      data.equipo.forEach(p => { EQUIPO[p.nombre] = p.departamento; });
+      selR.innerHTML = '<option value="">Selecciona tu nombre…</option>';
+      Object.keys(EQUIPO).sort().forEach(nombre => {
+        const opt = document.createElement('option');
+        opt.value = nombre; opt.textContent = nombre;
+        selR.appendChild(opt);
+      });
+    }
+  } catch(_) { showToast('No se pudo cargar la lista del equipo'); }
+}
+cargarEquipoSelect();
 
 // Preseleccionar próximo lunes al cargar
 autoSeleccionarSemana();
@@ -1464,21 +1461,7 @@ function comprimirImagen(file, callback) {
 }
 
 // EJECUCIÓN
-const EQUIPO_E = {
-  'Alejandro Callejas'  :'Subgerencia de Producción',
-  'Armando Reyes'       :'Mecanización',
-  'Elvido Flores'       :'Subgerencia de Producción',
-  'Elvis Ruiz'          :'Malezas y Madurantes',
-  'Elmer Gonzalez'      :'Investigación',
-  'Franklin Cobo'       :'Malezas y Madurantes',
-  'Hugo Castellanos'    :'Mecanización',
-  'Jose V. Gomez'       :'Investigación',
-  'Luis Las'            :'Investigación',
-  'Manuel Corado'       :'Malezas y Madurantes',
-  'Misael Perez'        :'SIG',
-  'Omar Gomez'          :'Riego',
-  'Ricardo Juarez'      :'Riego',
-};
+let EQUIPO_E = {}; // se llena dinámicamente desde la hoja "Equipo" del Sheet
 
 const ZONAS_E = ['Oficinas Ingenio','Taller Central','Empresa','Hule Sur','Particulares','CENGICAÑA','Agroindustria','Extranjero','Reunión Virtual','Hule Norte','Frutiagro','Ciudad Capital','Zona 1','Zona 1: Camantulul','Zona 1: Cristóbal','Zona 1: El Tesoro','Zona 1: La Garrucha','Zona 1: Las Flores MT','Zona 1: Los Amigos','Zona 1: Madre Tierra 2','Zona 1: Monte Cristo','Zona 1: Nuevo Mundo','Zona 1: Patricia','Zona 1: Santa Isabel','Zona 1: Tesalia','Zona 3','Zona 3: Cañaverales','Zona 3: Concepción Buena Vista','Zona 3: Limones','Zona 3: Madre Tierra','Zona 3: Palmira','Zona 3: San Salvador','Zona 3: Victory','Zona 3: Xata','Zona 4','Zona 4: Barranquilla','Zona 4: Coyolate','Zona 4: El Manantial','Zona 4: El Recreo','Zona 4: El Retiro','Zona 4: Horizontes','Zona 4: La Bendición','Zona 4: La Esperanza Mapan','Zona 4: Las Parcelas NC','Zona 4: Mixqueño','Zona 4: San Antonio Mapan','Zona 4: San Lorenzo','Zona 4: San Roque','Zona 4: Santa Marta','Zona 4: Variedades','Zona 5','Zona 5: Camelias','Zona 5: Canoas','Zona 5: Concepción La Noria','Zona 5: El Carmen','Zona 5: El Doral','Zona 5: Las Majadas','Zona 5: Málaga','Zona 5: Minar','Zona 5: Nacimiento','Zona 5: Pajuil','Zona 5: Peten','Zona 5: San Antonio','Zona 5: Santa Emilia','Zona 5: San Miguel Málaga','Zona 8','Zona 8: Aguacapa','Zona 8: La Encantadora','Zona 8: La Luz','Zona 8: La Primavera','Zona 8: Las Flores','Zona 8: Las Marias','Zona 8: Las Pozas','INAFEB'];
 
@@ -1522,9 +1505,22 @@ function fmtMes(iso){ if(!iso)return''; return new Date(iso+'T12:00:00').toLocal
 
 // ── Responsable select ──────────────────────────────────────────────
 const selR_E = document.getElementById('selResp');
-Object.keys(EQUIPO_E).sort().forEach(n=>{
-  const o=document.createElement('option'); o.value=n; o.textContent=n; selR_E.appendChild(o);
-});
+async function cargarEquipoSelectE() {
+  try {
+    const res = await fetch(WEB_APP_URL + '?modo=equipo&t=' + Date.now());
+    const data = await res.json();
+    if (data.ok && data.equipo) {
+      EQUIPO_E = {};
+      data.equipo.forEach(p => { EQUIPO_E[p.nombre] = p.departamento; });
+      selR_E.innerHTML = '<option value="">Selecciona tu nombre…</option>';
+      Object.keys(EQUIPO_E).sort().forEach(n => {
+        const o = document.createElement('option'); o.value = n; o.textContent = n;
+        selR_E.appendChild(o);
+      });
+    }
+  } catch(_) { showToast('No se pudo cargar la lista del equipo'); }
+}
+cargarEquipoSelectE();
 selR_E.addEventListener('change',()=>{ if(selR_E.value) cargarPlanificacion(selR_E.value); });
 
 // ── Cargar planificación ────────────────────────────────────────────
