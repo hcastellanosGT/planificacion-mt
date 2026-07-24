@@ -295,7 +295,7 @@ table.det tr:hover td{background:#faf6ef;}
     <button class="nav-item" onclick="navTo('planificacion')" id="nav-planificacion"><span class="icon">📝</span>Planificación</button>
     <button class="nav-item" onclick="navTo('ejecucion')" id="nav-ejecucion"><span class="icon">✅</span>Ejecución</button>
   </div>
-  <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 09/07/2026 · 16:32</span></div>
+  <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 24/07/2026 · 16:47</span></div>
 </nav>
 
 <div class="main">
@@ -479,6 +479,19 @@ table.det tr:hover td{background:#faf6ef;}
 
 <script>
 
+// Escapa caracteres HTML antes de insertar texto libre (actividad, lugar,
+// tema, etc.) en innerHTML — evita que un '<' o '&' rompa el layout, y
+// evita inyección de HTML/script si alguien pega contenido malicioso.
+function escapeHtml(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+
 // ── BLOQUEO DOMINGO ──────────────────────────────────────────────────────────
 function esDomingo() {
   return new Date().getDay() === 0;
@@ -520,7 +533,7 @@ function mostrarBloqueDomingo(contenedor) {
 
 
 
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzfiApGCUTb4cpZwPoWhYyHPH84mFazqK3Tt5Llk9L8oYuAHtByxKbHPJf0xfwQTSb78A/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxkO4hFyJQ2ylnFjVd1sqPAnEht6rg1YLHNyrQ_Wn_JNEG329KdVbO99Tlz5idmIaXChA/exec';
 
 // Variables globales compartidas
 let archivos = [];
@@ -1665,12 +1678,12 @@ function mkAct(diaIdx, act, noPlaneada) {
   const rmBtn = noPlaneada
     ? `<button class="btn-rm" onclick="eliminarAct(${diaIdx},'${act.id}')">✕</button>` : '';
   top.innerHTML = `
-    <span class="hora-badge" style="background:${jornadaColor_E(act.hora)}">${act.hora||'s/h'}</span>
+    <span class="hora-badge" style="background:${jornadaColor_E(act.hora)}">${escapeHtml(act.hora)||'s/h'}</span>
     <div class="act-det">
-      <div class="act-nom">${act.actividad}${noPlaneada?'<span class="noplan-badge">No planificada</span>':''}</div>
+      <div class="act-nom">${escapeHtml(act.actividad)}${noPlaneada?'<span class="noplan-badge">No planificada</span>':''}</div>
       <div class="act-tags">
-        <span class="act-tag">${act.lugar||'Sin lugar'}</span>
-        <span class="act-tag">${act.tema||'Sin tema'}</span>
+        <span class="act-tag">${escapeHtml(act.lugar)||'Sin lugar'}</span>
+        <span class="act-tag">${escapeHtml(act.tema)||'Sin tema'}</span>
       </div>
     </div>${rmBtn}`;
   inner.appendChild(top);
@@ -2108,8 +2121,8 @@ function renderCalendar(){
         .filter(a=>{ const h=parseInt((a.hora||'').split(':')[0]); return !isNaN(h) && h>=b.ini && h<=b.fin; })
         .sort((a,x)=>(a.hora||'').localeCompare(x.hora||''));
       const chips = enBloque.map(a=>
-        `<div class="cal-chip" style="border-left-color:${colorDepto(a.departamento||'')}" title="${a.hora} · ${a.responsable}\n${a.actividad}\n${a.lugar||''}">`+
-        `<b>${a.hora}</b> ${a.responsable.split(' ')[0]}<br><span>${a.actividad}</span></div>`
+        `<div class="cal-chip" style="border-left-color:${colorDepto(a.departamento||'')}" title="${escapeHtml(a.hora)} · ${escapeHtml(a.responsable)}\n${escapeHtml(a.actividad)}\n${escapeHtml(a.lugar)}">`+
+        `<b>${escapeHtml(a.hora)}</b> ${escapeHtml((a.responsable||'').split(' ')[0])}<br><span>${escapeHtml(a.actividad)}</span></div>`
       ).join('');
       rowHTML += `<td>${chips}</td>`;
     });
@@ -2158,7 +2171,7 @@ function renderTabla(){
     const top=Object.entries(porArea).sort((x,y)=>y[1]-x[1])[0];
     const color=colorDepto(a.departamento||'');
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td><strong>${a.responsable}</strong></td><td><span class="tag-depto" style="background:${color}">${a.departamento||'—'}</span></td><td>${a.actividades.length}</td><td>${top?top[0]:'—'}</td>`;
+    tr.innerHTML=`<td><strong>${escapeHtml(a.responsable)}</strong></td><td><span class="tag-depto" style="background:${color}">${escapeHtml(a.departamento)||'—'}</span></td><td>${a.actividades.length}</td><td>${top?escapeHtml(top[0]):'—'}</td>`;
     tbody.appendChild(tr);
   });
 }
