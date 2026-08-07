@@ -289,6 +289,7 @@ table.det tr:hover td{background:#faf6ef;}
   <div class="nav-section">
     <p class="nav-label">Consulta</p>
     <button class="nav-item" onclick="navTo('analisis')" id="nav-analisis"><span class="icon">📊</span>Ver planificación del equipo</button>
+    <button class="nav-item" onclick="navTo('cumplimiento')" id="nav-cumplimiento"><span class="icon">📈</span>Cumplimiento</button>
   </div>
   <div class="nav-section">
     <p class="nav-label">Semana</p>
@@ -297,7 +298,7 @@ table.det tr:hover td{background:#faf6ef;}
   </div>
   <div style="margin-top:auto;">
     <a href="https://drive.google.com/file/d/1MpFPOIvE--SRVtSD1iHzIUmoY0Mla-xA/view?usp=sharing" target="_blank" rel="noopener" style="display:block;text-align:center;background:rgba(193,101,47,.15);border:1px solid var(--terracota,#c1652f);color:var(--terracota,#c1652f);text-decoration:none;font-weight:600;font-size:12px;padding:9px;margin:0 16px 12px;border-radius:8px;">📖 Leer manual de usuario</a>
-    <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 06/08/2026 · 18:18</span></div>
+    <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 06/08/2026 · 21:52</span></div>
   </div>
 </nav>
 
@@ -455,6 +456,40 @@ table.det tr:hover td{background:#faf6ef;}
     </div>
   </div>
 
+  <!-- CUMPLIMIENTO -->
+  <div class="page" id="page-cumplimiento">
+    <div class="top"><div class="top-inner">
+      <div><p class="eyebrow">División Agrícola · Madre Tierra</p><h1>Cumplimiento del equipo</h1><p class="sub">Quién cumple, cancela, reprograma y reporta actividades no planificadas.</p></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost" id="btnActualizarC" onclick="cargarCumplimiento()" style="border-color:rgba(255,255,255,.4);color:#fff;">🔄 Actualizar</button>
+      </div>
+    </div></div>
+    <div class="wrap">
+      <p id="estadoCargaC" style="font-size:12px;color:var(--texto-suave);margin-bottom:14px;"></p>
+      <div id="destacadosC" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:20px;"></div>
+      <div class="card">
+        <h2>📋 Detalle por persona</h2>
+        <div style="overflow-x:auto;">
+          <table class="cal-matrix" id="tablaCumplimiento" style="min-width:640px;">
+            <thead>
+              <tr>
+                <th style="text-align:left;">Responsable</th>
+                <th>Total</th>
+                <th>Realizadas</th>
+                <th>Reprogramadas</th>
+                <th>Canceladas</th>
+                <th>No planificadas</th>
+                <th>% Cumplimiento</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyCumplimiento"></tbody>
+          </table>
+        </div>
+      </div>
+      <div id="emptyC" style="display:none;text-align:center;padding:40px;color:var(--texto-suave);">Aún no hay datos de ejecución para esta semana.</div>
+    </div>
+  </div>
+
   <!-- BIENVENIDA -->
   <div class="page active" id="page-bienvenida">
     <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:var(--crema);">
@@ -536,7 +571,7 @@ function mostrarBloqueDomingo(contenedor) {
 
 
 
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbz27IfpCzQ6kvm4Ugkqs4OdYW5pvgwVBzDLbAtY-mt625W4AT3xoU10j0CBn61CqDZb3A/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzgNNI6gwJKTwT2i2Hj9U5nU1kO_L18GoJ6mXn1CNvR0Gjm9HMqXq6jrsM84IJ3EperCA/exec';
 
 // Variables globales compartidas
 let archivos = [];
@@ -562,6 +597,10 @@ function navTo(page){
   if (page === 'analisis' && typeof actualizar === 'function') {
     const dash = document.getElementById('dashContent');
     if (dash && dash.style.display === 'none') actualizar();
+  }
+  // Al navegar a Cumplimiento — siempre disponible (solo consulta)
+  if (page === 'cumplimiento' && !cumplimientoCargado) {
+    cargarCumplimiento();
   }
 }
 function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('open'); }
@@ -2313,6 +2352,120 @@ const EST_STYLE = {
 
 // ── Exportar CSV ─────────────────────────────────────────────────────
 
+
+
+
+// ══════════════════════════════════════════════════════════════════════════
+//  CUMPLIMIENTO DEL EQUIPO
+// ══════════════════════════════════════════════════════════════════════════
+let cumplimientoCargado = false;
+
+async function cargarCumplimiento(){
+  if(WEB_APP_URL === 'PEGA_AQUI_TU_URL'){ showToast('Falta configurar la URL de conexión'); return; }
+  const btn = document.getElementById('btnActualizarC');
+  const est = document.getElementById('estadoCargaC');
+  if(btn){ btn.disabled = true; btn.textContent = '🔄 Cargando…'; }
+  try{
+    // Semana en curso: domingo muestra la semana que cerró ayer
+    const hoy = new Date();
+    const dow = hoy.getDay();
+    const lunes = new Date(hoy);
+    lunes.setDate(hoy.getDate() + (dow === 0 ? -6 : 1 - dow));
+    const semana = calcularSemana(lunes);
+
+    const res = await fetch(WEB_APP_URL + '?modo=cumplimiento&semana=' + semana + '&t=' + Date.now());
+    const data = await res.json();
+    if(!data.ok){ showToast('Error: ' + (data.error||'')); return; }
+    cumplimientoCargado = true;
+    renderCumplimiento(data.registros || []);
+    if(est) est.textContent = `Semana ${semana} · Actualizado: ${new Date().toLocaleString('es-GT')}`;
+  }catch(e){
+    showToast('Sin conexión con la hoja de datos');
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = '🔄 Actualizar'; }
+  }
+}
+
+function renderCumplimiento(registros){
+  const cont  = document.getElementById('destacadosC');
+  const tbody = document.getElementById('tbodyCumplimiento');
+  const empty = document.getElementById('emptyC');
+  const tabla = document.getElementById('tablaCumplimiento');
+  cont.innerHTML = ''; tbody.innerHTML = '';
+
+  if(!registros.length){
+    empty.style.display = 'block';
+    tabla.parentElement.parentElement.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  tabla.parentElement.parentElement.style.display = 'block';
+
+  // Agrupar por persona
+  const porPersona = {};
+  registros.forEach(r => {
+    if(!porPersona[r.responsable])
+      porPersona[r.responsable] = { depto:r.departamento, total:0,
+        Realizada:0, Reprogramada:0, Cancelada:0, Planificado:0, noPlan:0 };
+    const p = porPersona[r.responsable];
+    p.total++;
+    if(r.noPlaneada || r.estado === 'No planificada') p.noPlan++;
+    else if(p[r.estado] !== undefined) p[r.estado]++;
+  });
+
+  const lista = Object.entries(porPersona).map(([nombre, p]) => {
+    const ejecutadas = p.Realizada + p.noPlan;
+    return { nombre, ...p, ejecutadas, pct: p.total ? Math.round(ejecutadas / p.total * 100) : 0 };
+  });
+
+  // ── Destacados ────────────────────────────────────────────────────────────
+  const mejor      = [...lista].sort((a,b)=>b.pct-a.pct || b.total-a.total)[0];
+  const masCancela = [...lista].sort((a,b)=>b.Cancelada-a.Cancelada)[0];
+  const masReprog  = [...lista].sort((a,b)=>b.Reprogramada-a.Reprogramada)[0];
+  const masNoPlan  = [...lista].sort((a,b)=>b.noPlan-a.noPlan)[0];
+
+  const tarjetas = [
+    { icono:'🏆', titulo:'Mayor cumplimiento', color:'#16A34A',
+      nombre: mejor.nombre, dato:`${mejor.pct}% (${mejor.ejecutadas}/${mejor.total})` },
+    { icono:'🔁', titulo:'Más reprograma', color:'#D97706',
+      nombre: masReprog.Reprogramada>0 ? masReprog.nombre : '—',
+      dato: masReprog.Reprogramada>0 ? `${masReprog.Reprogramada} reprogramada${masReprog.Reprogramada===1?'':'s'}` : 'Nadie esta semana' },
+    { icono:'❌', titulo:'Más cancela', color:'#DC2626',
+      nombre: masCancela.Cancelada>0 ? masCancela.nombre : '—',
+      dato: masCancela.Cancelada>0 ? `${masCancela.Cancelada} cancelada${masCancela.Cancelada===1?'':'s'}` : 'Nadie esta semana' },
+    { icono:'✨', titulo:'Más no planificadas', color:'#7C3AED',
+      nombre: masNoPlan.noPlan>0 ? masNoPlan.nombre : '—',
+      dato: masNoPlan.noPlan>0 ? `${masNoPlan.noPlan} no planificada${masNoPlan.noPlan===1?'':'s'}` : 'Nadie esta semana' },
+  ];
+
+  tarjetas.forEach(t => {
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.style.cssText = `border-left:4px solid ${t.color};margin-bottom:0;`;
+    div.innerHTML = `
+      <div style="font-size:11px;color:var(--texto-suave);text-transform:uppercase;letter-spacing:.05em;">${t.icono} ${t.titulo}</div>
+      <div style="font-size:17px;font-weight:700;color:var(--cana-900);margin-top:6px;">${escapeHtml(t.nombre)}</div>
+      <div style="font-size:13px;color:${t.color};font-weight:600;margin-top:2px;">${escapeHtml(t.dato)}</div>`;
+    cont.appendChild(div);
+  });
+
+  // ── Tabla ─────────────────────────────────────────────────────────────────
+  lista.sort((a,b)=>b.pct-a.pct || b.total-a.total);
+  lista.forEach((p, i) => {
+    const tr = document.createElement('tr');
+    const pctColor = p.pct>=80 ? '#16A34A' : p.pct>=50 ? '#D97706' : '#DC2626';
+    tr.style.background = i%2 ? 'var(--crema, #f7f3ea)' : '#fff';
+    tr.innerHTML = `
+      <td style="text-align:left;font-weight:600;">${escapeHtml(p.nombre)}<br><span style="font-size:10px;color:var(--texto-suave);font-weight:400;">${escapeHtml(p.depto)}</span></td>
+      <td style="text-align:center;">${p.total}</td>
+      <td style="text-align:center;color:#16A34A;font-weight:600;">${p.Realizada}</td>
+      <td style="text-align:center;color:#D97706;font-weight:600;">${p.Reprogramada}</td>
+      <td style="text-align:center;color:#DC2626;font-weight:600;">${p.Cancelada}</td>
+      <td style="text-align:center;color:#7C3AED;font-weight:600;">${p.noPlan}</td>
+      <td style="text-align:center;font-weight:700;color:${pctColor};">${p.pct}%</td>`;
+    tbody.appendChild(tr);
+  });
+}
 
 // ── INICIO DE LA APP ─────────────────────────────────────────────────────────
 // La app abre directo en la planificación del equipo
