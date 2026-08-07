@@ -298,7 +298,7 @@ table.det tr:hover td{background:#faf6ef;}
   </div>
   <div style="margin-top:auto;">
     <a href="https://drive.google.com/file/d/1MpFPOIvE--SRVtSD1iHzIUmoY0Mla-xA/view?usp=sharing" target="_blank" rel="noopener" style="display:block;text-align:center;background:rgba(193,101,47,.15);border:1px solid var(--terracota,#c1652f);color:var(--terracota,#c1652f);text-decoration:none;font-weight:600;font-size:12px;padding:9px;margin:0 16px 12px;border-radius:8px;">📖 Leer manual de usuario</a>
-    <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 06/08/2026 · 21:57</span></div>
+    <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 07/08/2026 · 07:59</span></div>
   </div>
 </nav>
 
@@ -465,7 +465,11 @@ table.det tr:hover td{background:#faf6ef;}
       </div>
     </div></div>
     <div class="wrap">
-      <p id="estadoCargaC" style="font-size:12px;color:var(--texto-suave);margin-bottom:14px;"></p>
+      <div class="card" style="padding:12px;display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="btn btn-ghost" id="vistaAnteriorC" onclick="cargarCumplimiento('anterior')" style="border-color:var(--cana-700);color:var(--cana-700);font-weight:700;">📅 Semana anterior</button>
+        <button class="btn btn-ghost" id="vistaAcumuladoC" onclick="cargarCumplimiento('acumulado')">📊 Últimas 4 semanas</button>
+      </div>
+      <p id="estadoCargaC" style="font-size:12px;color:var(--texto-suave);margin:10px 0 14px;"></p>
       <div id="destacadosC" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:20px;"></div>
       <div class="card">
         <h2>📋 Detalle por persona</h2>
@@ -571,7 +575,7 @@ function mostrarBloqueDomingo(contenedor) {
 
 
 
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzgNNI6gwJKTwT2i2Hj9U5nU1kO_L18GoJ6mXn1CNvR0Gjm9HMqXq6jrsM84IJ3EperCA/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzSyEkkO2xTWk7yFbQs82Q9Ivbgk3eZspQByCNxsz8E3Lm3y9FL26pqHJq2NG8Yp6VZ-g/exec';
 
 // Variables globales compartidas
 let archivos = [];
@@ -2360,25 +2364,51 @@ const EST_STYLE = {
 // ══════════════════════════════════════════════════════════════════════════
 let cumplimientoCargado = false;
 
-async function cargarCumplimiento(){
+let vistaCumplimiento = 'anterior';
+
+async function cargarCumplimiento(vista){
   if(WEB_APP_URL === 'PEGA_AQUI_TU_URL'){ showToast('Falta configurar la URL de conexión'); return; }
+  if(vista) vistaCumplimiento = vista;
+
+  // Resaltar la pestaña activa
+  const bAnt = document.getElementById('vistaAnteriorC');
+  const bAcu = document.getElementById('vistaAcumuladoC');
+  if(bAnt && bAcu){
+    const activo = 'border-color:var(--cana-700);color:var(--cana-700);font-weight:700;';
+    const normal = '';
+    bAnt.style.cssText = vistaCumplimiento === 'anterior' ? activo : normal;
+    bAcu.style.cssText = vistaCumplimiento === 'acumulado' ? activo : normal;
+  }
+
   const btn = document.getElementById('btnActualizarC');
   const est = document.getElementById('estadoCargaC');
   if(btn){ btn.disabled = true; btn.textContent = '🔄 Cargando…'; }
   try{
-    // Semana en curso: domingo muestra la semana que cerró ayer
+    // Lunes de la última semana COMPLETADA:
+    // domingo → la que cerró ayer; lun-sáb → la semana pasada
     const hoy = new Date();
     const dow = hoy.getDay();
-    const lunes = new Date(hoy);
-    lunes.setDate(hoy.getDate() + (dow === 0 ? -6 : 1 - dow));
-    const semana = calcularSemana(lunes);
+    const lunesAnterior = new Date(hoy);
+    lunesAnterior.setDate(hoy.getDate() + (dow === 0 ? -6 : 1 - dow - 7));
 
-    const res = await fetch(WEB_APP_URL + '?modo=cumplimiento&semana=' + semana + '&t=' + Date.now());
+    // Lista de lunes según la vista (1 semana o las últimas 4)
+    const numSemanas = vistaCumplimiento === 'acumulado' ? 4 : 1;
+    const semanas = [];
+    for(let i = 0; i < numSemanas; i++){
+      const d = new Date(lunesAnterior);
+      d.setDate(lunesAnterior.getDate() - 7*i);
+      semanas.push(calcularSemana(d));
+    }
+
+    const res = await fetch(WEB_APP_URL + '?modo=cumplimiento&semana=' + semanas.join(',') + '&t=' + Date.now());
     const data = await res.json();
     if(!data.ok){ showToast('Error: ' + (data.error||'')); return; }
     cumplimientoCargado = true;
     renderCumplimiento(data.registros || []);
-    if(est) est.textContent = `Semana ${semana} · Actualizado: ${new Date().toLocaleString('es-GT')}`;
+    const etiqueta = numSemanas === 1
+      ? `Semana ${semanas[0]}`
+      : `Semanas ${semanas[semanas.length-1]} a ${semanas[0]} (últimas 4)`;
+    if(est) est.textContent = `${etiqueta} · Actualizado: ${new Date().toLocaleString('es-GT')}`;
   }catch(e){
     showToast('Sin conexión con la hoja de datos');
   }finally{
