@@ -19,7 +19,7 @@ body{margin:0;background:var(--crema);color:var(--texto);font-family:var(--font-
 .nav-item:hover{background:rgba(255,255,255,.08);color:#fff;}
 .nav-item.active{background:var(--terracota);color:#fff;}
 .nav-item .icon{font-size:16px;flex-shrink:0;width:20px;text-align:center;}
-.sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid rgba(255,255,255,.1);font-size:11px;color:rgba(255,255,255,.3);font-family:var(--font-mono);line-height:1.6;}
+.sidebar-footer{padding:16px;border-top:1px solid rgba(255,255,255,.1);font-size:11px;color:rgba(255,255,255,.3);font-family:var(--font-mono);line-height:1.6;}
 .menu-toggle{display:none;position:fixed;top:12px;left:12px;z-index:40;background:var(--cana-900);color:#fff;border:none;border-radius:8px;padding:8px 10px;font-size:18px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);}
 .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:25;}
 @media(max-width:768px){
@@ -295,7 +295,10 @@ table.det tr:hover td{background:#faf6ef;}
     <button class="nav-item" onclick="navTo('planificacion')" id="nav-planificacion"><span class="icon">📝</span>Planificación</button>
     <button class="nav-item" onclick="navTo('ejecucion')" id="nav-ejecucion"><span class="icon">✅</span>Ejecución</button>
   </div>
-  <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 24/07/2026 · 16:47</span></div>
+  <div style="margin-top:auto;">
+    <a href="https://drive.google.com/file/d/1MpFPOIvE--SRVtSD1iHzIUmoY0Mla-xA/view?usp=sharing" target="_blank" rel="noopener" style="display:block;text-align:center;background:rgba(193,101,47,.15);border:1px solid var(--terracota,#c1652f);color:var(--terracota,#c1652f);text-decoration:none;font-weight:600;font-size:12px;padding:9px;margin:0 16px 12px;border-radius:8px;">📖 Leer manual de usuario</a>
+    <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 06/08/2026 · 18:18</span></div>
+  </div>
 </nav>
 
 <div class="main">
@@ -533,7 +536,7 @@ function mostrarBloqueDomingo(contenedor) {
 
 
 
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxkO4hFyJQ2ylnFjVd1sqPAnEht6rg1YLHNyrQ_Wn_JNEG329KdVbO99Tlz5idmIaXChA/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbz27IfpCzQ6kvm4Ugkqs4OdYW5pvgwVBzDLbAtY-mt625W4AT3xoU10j0CBn61CqDZb3A/exec';
 
 // Variables globales compartidas
 let archivos = [];
@@ -1435,6 +1438,19 @@ function dataURLtoBlob(dataURL) {
 
 // ── COMPRESIÓN DE IMAGEN ─────────────────────────────────────────────────────
 // Reduce la imagen a máximo 30KB para que quepa en Google Sheets (límite ~50K chars)
+
+// Calcula horas-hombre entre hora inicio y hora fin ("HH:MM"). Devuelve
+// string con 2 decimales, o '' si los datos están incompletos o son inválidos.
+function calcularHorasHombre(horaInicio, horaFin) {
+  if (!horaInicio || !horaFin) return '';
+  const [h1, m1] = horaInicio.split(':').map(Number);
+  const [h2, m2] = horaFin.split(':').map(Number);
+  if ([h1,m1,h2,m2].some(isNaN)) return '';
+  const minutos = (h2*60+m2) - (h1*60+m1);
+  if (minutos <= 0) return '';
+  return (minutos/60).toFixed(2);
+}
+
 function comprimirImagen(file, callback) {
   const MAX_BYTES = 28000; // ~37KB base64 → margen seguro bajo 50K chars
   const reader = new FileReader();
@@ -1621,6 +1637,7 @@ function aplicarDatos(fuente){
       actividad:a.actividad||'', estado:a.estado||'Planificado',
       observacion:a.observacion||'', noPlaneada:!!a.noPlaneada,
       foto: (a.foto && String(a.foto).startsWith('data:image')) ? a.foto : null,
+      horaInicio:a.horaInicio||'', horaFin:a.horaFin||'', horasHombre:a.horasHombre||'',
     });
   });
   const sab = metaDatos.lunesFecha ? (()=>{const d=new Date(metaDatos.lunesFecha+'T12:00:00');d.setDate(d.getDate()+5);return d.toISOString().slice(0,10);})() : '';
@@ -1739,6 +1756,53 @@ function mkAct(diaIdx, act, noPlaneada) {
   obsRow.appendChild(obs);
   ctrl.appendChild(obsRow);
   inner.appendChild(ctrl);
+
+  // ── Fila horas-hombre (opcional) ──────────────────────────────────────
+  const hhRow = document.createElement('div');
+  hhRow.style.cssText = 'padding:8px 12px;border-top:1px solid var(--linea);display:flex;align-items:center;gap:10px;flex-wrap:wrap;';
+
+  const hhLabel = document.createElement('span');
+  hhLabel.style.cssText = 'font-size:11px;color:var(--texto-suave);white-space:nowrap;';
+  hhLabel.textContent = '⏱️ Horas-hombre (opcional):';
+  hhRow.appendChild(hhLabel);
+
+  const inicioWrap = document.createElement('div');
+  inicioWrap.style.cssText = 'display:flex;align-items:center;gap:4px;';
+  const inicioLbl = document.createElement('span'); inicioLbl.style.cssText='font-size:10px;color:var(--texto-suave);'; inicioLbl.textContent='Inicio';
+  const inputInicio = document.createElement('input');
+  inputInicio.type = 'time'; inputInicio.value = act.horaInicio || '';
+  inputInicio.style.cssText = 'font-size:12px;padding:4px 6px;border:1px solid var(--linea);border-radius:6px;';
+  inicioWrap.appendChild(inicioLbl); inicioWrap.appendChild(inputInicio);
+  hhRow.appendChild(inicioWrap);
+
+  const finWrap = document.createElement('div');
+  finWrap.style.cssText = 'display:flex;align-items:center;gap:4px;';
+  const finLbl = document.createElement('span'); finLbl.style.cssText='font-size:10px;color:var(--texto-suave);'; finLbl.textContent='Fin';
+  const inputFin = document.createElement('input');
+  inputFin.type = 'time'; inputFin.value = act.horaFin || '';
+  inputFin.style.cssText = 'font-size:12px;padding:4px 6px;border:1px solid var(--linea);border-radius:6px;';
+  finWrap.appendChild(finLbl); finWrap.appendChild(inputFin);
+  hhRow.appendChild(finWrap);
+
+  const hhResultado = document.createElement('span');
+  hhResultado.style.cssText = 'font-size:12px;font-weight:700;color:var(--cana-700);margin-left:auto;';
+  const actualizarHH = (guardar) => {
+    act.horaInicio = inputInicio.value; act.horaFin = inputFin.value;
+    act.horasHombre = calcularHorasHombre(act.horaInicio, act.horaFin);
+    if (act.horaInicio && act.horaFin && !act.horasHombre) {
+      hhResultado.style.color = 'var(--alerta)';
+      hhResultado.textContent = 'Hora fin debe ser mayor';
+    } else {
+      hhResultado.style.color = 'var(--cana-700)';
+      hhResultado.textContent = act.horasHombre ? act.horasHombre + ' h' : '';
+    }
+    if (guardar) guardarBorrador_E();
+  };
+  inputInicio.onchange = () => actualizarHH(true);
+  inputFin.onchange = () => actualizarHH(true);
+  actualizarHH(false);
+  hhRow.appendChild(hhResultado);
+  inner.appendChild(hhRow);
 
   // ── Fila foto ──────────────────────────────────────────────────────────
   const fotoRow = document.createElement('div');
@@ -1863,7 +1927,7 @@ function mostrarFormNueva(diaIdx,card,addDiv){
   btnAdd.onclick=()=>{
     if(!inAct.value.trim()){ showToast('Escribe la descripción'); return; }
     diasData_E[diaIdx].push({id:uid_E(),hora:selHora.value,lugar:selLugar.value,tema:selTema.value,
-      actividad:inAct.value.trim(),estado:'No planificada',observacion:inObs.value.trim(),noPlaneada:true,foto:null});
+      actividad:inAct.value.trim(),estado:'No planificada',observacion:inObs.value.trim(),noPlaneada:true,foto:null,horaInicio:'',horaFin:'',horasHombre:''});
     // Ordenar el día por hora después de agregar
     diasData_E[diaIdx].sort((a,b)=>(a.hora||'99:99').localeCompare(b.hora||'99:99'));
     form.remove(); renderDias_E(); guardarBorrador_E();
@@ -1920,6 +1984,7 @@ function recolectar_E(){
     dia:DIAS_E[i],diaIndex:i,fecha:fechaPara_E(i),hora:a.hora,lugar:a.lugar,tema:a.tema,
     actividad:a.actividad,estado:a.estado,observacion:a.observacion||'',
     noPlaneada:!!a.noPlaneada, foto:(a.foto && String(a.foto).startsWith('data:image')) ? a.foto : null,
+    horaInicio:a.horaInicio||'', horaFin:a.horaFin||'', horasHombre:a.horasHombre||'',
   })));
   return {...metaDatos,actividades:acts,tipo:'ejecucion',generadoEn:new Date().toISOString()};
 }
