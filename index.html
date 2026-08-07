@@ -298,7 +298,7 @@ table.det tr:hover td{background:#faf6ef;}
   </div>
   <div style="margin-top:auto;">
     <a href="https://drive.google.com/file/d/1MpFPOIvE--SRVtSD1iHzIUmoY0Mla-xA/view?usp=sharing" target="_blank" rel="noopener" style="display:block;text-align:center;background:rgba(193,101,47,.15);border:1px solid var(--terracota,#c1652f);color:var(--terracota,#c1652f);text-decoration:none;font-weight:600;font-size:12px;padding:9px;margin:0 16px 12px;border-radius:8px;">📖 Leer manual de usuario</a>
-    <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 07/08/2026 · 07:59</span></div>
+    <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 07/08/2026 · 08:09</span></div>
   </div>
 </nav>
 
@@ -465,16 +465,13 @@ table.det tr:hover td{background:#faf6ef;}
       </div>
     </div></div>
     <div class="wrap">
-      <div class="card" style="padding:12px;display:flex;gap:6px;flex-wrap:wrap;">
-        <button class="btn btn-ghost" id="vistaAnteriorC" onclick="cargarCumplimiento('anterior')" style="border-color:var(--cana-700);color:var(--cana-700);font-weight:700;">📅 Semana anterior</button>
-        <button class="btn btn-ghost" id="vistaAcumuladoC" onclick="cargarCumplimiento('acumulado')">📊 Últimas 4 semanas</button>
-      </div>
-      <p id="estadoCargaC" style="font-size:12px;color:var(--texto-suave);margin:10px 0 14px;"></p>
-      <div id="destacadosC" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:20px;"></div>
+      <h2 style="margin:0 0 6px;color:var(--cana-900);">📅 Semana anterior</h2>
+      <p id="estadoCargaC1" style="font-size:12px;color:var(--texto-suave);margin-bottom:14px;"></p>
+      <div id="destacadosC1" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:20px;"></div>
       <div class="card">
         <h2>📋 Detalle por persona</h2>
         <div style="overflow-x:auto;">
-          <table class="cal-matrix" id="tablaCumplimiento" style="min-width:640px;">
+          <table class="cal-matrix" id="tablaCumplimiento1" style="min-width:640px;">
             <thead>
               <tr>
                 <th style="text-align:left;">Responsable</th>
@@ -486,11 +483,34 @@ table.det tr:hover td{background:#faf6ef;}
                 <th>% Cumplimiento</th>
               </tr>
             </thead>
-            <tbody id="tbodyCumplimiento"></tbody>
+            <tbody id="tbodyCumplimiento1"></tbody>
           </table>
         </div>
       </div>
-      <div id="emptyC" style="display:none;text-align:center;padding:40px;color:var(--texto-suave);">Aún no hay datos de ejecución para esta semana.</div>
+      <div id="emptyC1" style="display:none;text-align:center;padding:40px;color:var(--texto-suave);">Aún no hay datos de ejecución para la semana anterior.</div>
+      <h2 style="margin:28px 0 6px;color:var(--cana-900);">📊 Últimas 4 semanas</h2>
+      <p id="estadoCargaC4" style="font-size:12px;color:var(--texto-suave);margin-bottom:14px;"></p>
+      <div id="destacadosC4" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:20px;"></div>
+      <div class="card">
+        <h2>📋 Detalle por persona</h2>
+        <div style="overflow-x:auto;">
+          <table class="cal-matrix" id="tablaCumplimiento4" style="min-width:640px;">
+            <thead>
+              <tr>
+                <th style="text-align:left;">Responsable</th>
+                <th>Total</th>
+                <th>Realizadas</th>
+                <th>Reprogramadas</th>
+                <th>Canceladas</th>
+                <th>No planificadas</th>
+                <th>% Cumplimiento</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyCumplimiento4"></tbody>
+          </table>
+        </div>
+      </div>
+      <div id="emptyC4" style="display:none;text-align:center;padding:40px;color:var(--texto-suave);">Aún no hay datos de ejecución en las últimas 4 semanas.</div>
     </div>
   </div>
 
@@ -2364,24 +2384,9 @@ const EST_STYLE = {
 // ══════════════════════════════════════════════════════════════════════════
 let cumplimientoCargado = false;
 
-let vistaCumplimiento = 'anterior';
-
-async function cargarCumplimiento(vista){
+async function cargarCumplimiento(){
   if(WEB_APP_URL === 'PEGA_AQUI_TU_URL'){ showToast('Falta configurar la URL de conexión'); return; }
-  if(vista) vistaCumplimiento = vista;
-
-  // Resaltar la pestaña activa
-  const bAnt = document.getElementById('vistaAnteriorC');
-  const bAcu = document.getElementById('vistaAcumuladoC');
-  if(bAnt && bAcu){
-    const activo = 'border-color:var(--cana-700);color:var(--cana-700);font-weight:700;';
-    const normal = '';
-    bAnt.style.cssText = vistaCumplimiento === 'anterior' ? activo : normal;
-    bAcu.style.cssText = vistaCumplimiento === 'acumulado' ? activo : normal;
-  }
-
   const btn = document.getElementById('btnActualizarC');
-  const est = document.getElementById('estadoCargaC');
   if(btn){ btn.disabled = true; btn.textContent = '🔄 Cargando…'; }
   try{
     // Lunes de la última semana COMPLETADA:
@@ -2391,10 +2396,9 @@ async function cargarCumplimiento(vista){
     const lunesAnterior = new Date(hoy);
     lunesAnterior.setDate(hoy.getDate() + (dow === 0 ? -6 : 1 - dow - 7));
 
-    // Lista de lunes según la vista (1 semana o las últimas 4)
-    const numSemanas = vistaCumplimiento === 'acumulado' ? 4 : 1;
+    // Últimas 4 semanas completadas
     const semanas = [];
-    for(let i = 0; i < numSemanas; i++){
+    for(let i = 0; i < 4; i++){
       const d = new Date(lunesAnterior);
       d.setDate(lunesAnterior.getDate() - 7*i);
       semanas.push(calcularSemana(d));
@@ -2404,11 +2408,19 @@ async function cargarCumplimiento(vista){
     const data = await res.json();
     if(!data.ok){ showToast('Error: ' + (data.error||'')); return; }
     cumplimientoCargado = true;
-    renderCumplimiento(data.registros || []);
-    const etiqueta = numSemanas === 1
-      ? `Semana ${semanas[0]}`
-      : `Semanas ${semanas[semanas.length-1]} a ${semanas[0]} (últimas 4)`;
-    if(est) est.textContent = `${etiqueta} · Actualizado: ${new Date().toLocaleString('es-GT')}`;
+
+    const registros = data.registros || [];
+    const regSemana1     = registros.filter(r => String(r.semana) === String(semanas[0]));
+    const regUltimas4    = registros;
+
+    renderCumplimiento(regSemana1, '1');
+    renderCumplimiento(regUltimas4, '4');
+
+    const ahora = new Date().toLocaleString('es-GT');
+    const est1 = document.getElementById('estadoCargaC1');
+    const est4 = document.getElementById('estadoCargaC4');
+    if(est1) est1.textContent = `Semana ${semanas[0]} · Actualizado: ${ahora}`;
+    if(est4) est4.textContent = `Semanas ${semanas[3]} a ${semanas[0]} · Actualizado: ${ahora}`;
   }catch(e){
     showToast('Sin conexión con la hoja de datos');
   }finally{
@@ -2416,11 +2428,11 @@ async function cargarCumplimiento(vista){
   }
 }
 
-function renderCumplimiento(registros){
-  const cont  = document.getElementById('destacadosC');
-  const tbody = document.getElementById('tbodyCumplimiento');
-  const empty = document.getElementById('emptyC');
-  const tabla = document.getElementById('tablaCumplimiento');
+function renderCumplimiento(registros, sufijo){
+  const cont  = document.getElementById('destacadosC'+sufijo);
+  const tbody = document.getElementById('tbodyCumplimiento'+sufijo);
+  const empty = document.getElementById('emptyC'+sufijo);
+  const tabla = document.getElementById('tablaCumplimiento'+sufijo);
   cont.innerHTML = ''; tbody.innerHTML = '';
 
   if(!registros.length){
@@ -2459,13 +2471,13 @@ function renderCumplimiento(registros){
       nombre: mejor.nombre, dato:`${mejor.pct}% (${mejor.ejecutadas}/${mejor.total})` },
     { icono:'🔁', titulo:'Más reprograma', color:'#D97706',
       nombre: masReprog.Reprogramada>0 ? masReprog.nombre : '—',
-      dato: masReprog.Reprogramada>0 ? `${masReprog.Reprogramada} reprogramada${masReprog.Reprogramada===1?'':'s'}` : 'Nadie esta semana' },
+      dato: masReprog.Reprogramada>0 ? `${masReprog.Reprogramada} reprogramada${masReprog.Reprogramada===1?'':'s'}` : 'Nadie en el período' },
     { icono:'❌', titulo:'Más cancela', color:'#DC2626',
       nombre: masCancela.Cancelada>0 ? masCancela.nombre : '—',
-      dato: masCancela.Cancelada>0 ? `${masCancela.Cancelada} cancelada${masCancela.Cancelada===1?'':'s'}` : 'Nadie esta semana' },
+      dato: masCancela.Cancelada>0 ? `${masCancela.Cancelada} cancelada${masCancela.Cancelada===1?'':'s'}` : 'Nadie en el período' },
     { icono:'✨', titulo:'Más no planificadas', color:'#7C3AED',
       nombre: masNoPlan.noPlan>0 ? masNoPlan.nombre : '—',
-      dato: masNoPlan.noPlan>0 ? `${masNoPlan.noPlan} no planificada${masNoPlan.noPlan===1?'':'s'}` : 'Nadie esta semana' },
+      dato: masNoPlan.noPlan>0 ? `${masNoPlan.noPlan} no planificada${masNoPlan.noPlan===1?'':'s'}` : 'Nadie en el período' },
   ];
 
   tarjetas.forEach(t => {
@@ -2496,6 +2508,7 @@ function renderCumplimiento(registros){
     tbody.appendChild(tr);
   });
 }
+
 
 // ── INICIO DE LA APP ─────────────────────────────────────────────────────────
 // La app abre directo en la planificación del equipo
