@@ -298,7 +298,7 @@ table.det tr:hover td{background:#faf6ef;}
   </div>
   <div style="margin-top:auto;">
     <a href="https://drive.google.com/file/d/1MpFPOIvE--SRVtSD1iHzIUmoY0Mla-xA/view?usp=sharing" target="_blank" rel="noopener" style="display:block;text-align:center;background:rgba(193,101,47,.15);border:1px solid var(--terracota,#c1652f);color:var(--terracota,#c1652f);text-decoration:none;font-weight:600;font-size:12px;padding:9px;margin:0 16px 12px;border-radius:8px;">📖 Leer manual de usuario</a>
-    <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 07/08/2026 · 08:33</span></div>
+    <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 15/08/2026 · corrección subida de fotos en ejecución</span></div>
   </div>
 </nav>
 
@@ -1500,7 +1500,8 @@ function dataURLtoBlob(dataURL) {
 }
 
 // ── COMPRESIÓN DE IMAGEN ─────────────────────────────────────────────────────
-// Reduce la imagen a máximo 30KB para que quepa en Google Sheets (límite ~50K chars)
+// Reduce la imagen a máximo ~18KB para que suba rápido incluso con señal
+// débil en campo, y quepa con margen bajo el límite de celda de Sheets (50K).
 
 // Calcula horas-hombre entre hora inicio y hora fin ("HH:MM"). Devuelve
 // string con 2 decimales, o '' si los datos están incompletos o son inválidos.
@@ -1515,7 +1516,8 @@ function calcularHorasHombre(horaInicio, horaFin) {
 }
 
 function comprimirImagen(file, callback) {
-  const MAX_BYTES = 28000; // ~37KB base64 → margen seguro bajo 50K chars
+  const MAX_BYTES = 18000; // más liviano: sube más rápido con señal débil
+  const MAX_DIM = 640;     // dimensión máxima del lado más largo
   const reader = new FileReader();
   reader.onload = function(e) {
     const img = new Image();
@@ -1523,8 +1525,6 @@ function comprimirImagen(file, callback) {
       const canvas = document.createElement('canvas');
       let w = img.width, h = img.height;
 
-      // Reducir dimensiones si la imagen es muy grande
-      const MAX_DIM = 800;
       if (w > MAX_DIM || h > MAX_DIM) {
         if (w > h) { h = Math.round(h * MAX_DIM / w); w = MAX_DIM; }
         else        { w = Math.round(w * MAX_DIM / h); h = MAX_DIM; }
@@ -1533,7 +1533,6 @@ function comprimirImagen(file, callback) {
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, w, h);
 
-      // Comprimir iterativamente hasta estar bajo el límite
       let quality = 0.7;
       let dataUrl = canvas.toDataURL('image/jpeg', quality);
       let bytes = Math.round(dataUrl.length * 0.75);
@@ -2053,27 +2052,70 @@ function recolectar_E(){
 }
 
 // ── Guardar en la nube ───────────────────────────────────────────────
-async function guardarEnLaNube_E(){
+async function guardarEnLaNube_E(esReintento){
   const payload=recolectar_E();
   if(!payload.responsable){ showToast('Selecciona tu nombre'); return; }
   if(!payload.actividades.length){ showToast('No hay actividades para guardar'); return; }
   if(WEB_APP_URL==='PEGA_AQUI_TU_URL'){ showToast('Falta configurar la URL'); return; }
   const btn=document.getElementById('btnGuardar_E'); const msg=document.getElementById('estadoMsg_E');
-  btn.disabled=true; btn.textContent='Guardando…';
+  btn.disabled=true; btn.textContent = esReintento ? 'Reintentando…' : 'Guardando…';
+
+  const tieneFotos = payload.actividades.some(a => a.foto);
+  const TIMEOUT_MS = tieneFotos ? 45000 : 20000; // más tiempo si hay fotos pesadas
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
   try{
-    const res=await fetch(WEB_APP_URL,{method:'POST',body:JSON.stringify(payload)});
-    const data=await res.json();
+    const res = await fetch(WEB_APP_URL, { method:'POST', body: JSON.stringify(payload), signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    let data;
+    try { data = await res.json(); }
+    catch (parseErr) { throw new Error('RESPUESTA_INVALIDA'); }
+
     if(data.ok){
       msg.style.color='var(--cana-700)';
       msg.textContent=`✓ Guardado el ${new Date().toLocaleString('es-GT')} — ${payload.actividades.length} actividades.`;
       localStorage.removeItem(claveBorrador(payload.responsable));
       showToast('Ejecución guardada ✓');
-    } else { msg.style.color='var(--alerta)'; msg.textContent='Error: '+(data.error||'desconocido'); }
-  }catch(_){
-    guardarBorrador_E(); msg.style.color='var(--alerta)';
-    msg.textContent='Sin conexión — borrador guardado. Intenta de nuevo con internet.';
-    showToast('Sin conexión — borrador guardado');
-  }finally{ btn.disabled=false; btn.textContent='💾 Guardar ejecución'; }
+      btn.disabled=false; btn.textContent='💾 Guardar ejecución';
+      return;
+    }
+    msg.style.color='var(--alerta)';
+    msg.textContent='Error del servidor: '+(data.error||'desconocido');
+    showToast('Error al guardar: ' + (data.error||'desconocido'));
+    btn.disabled=false; btn.textContent='💾 Guardar ejecución';
+
+  }catch(err){
+    clearTimeout(timeoutId);
+    guardarBorrador_E();
+
+    let motivo;
+    if (err.name === 'AbortError') {
+      motivo = tieneFotos
+        ? 'El envío tardó demasiado — probablemente señal débil y el peso de las fotos.'
+        : 'El envío tardó demasiado — probablemente señal débil.';
+    } else if (err.message === 'RESPUESTA_INVALIDA') {
+      motivo = 'El servidor no respondió correctamente (posible timeout por fotos pesadas).';
+    } else if (err.message && /failed to fetch/i.test(err.message)) {
+      motivo = 'Sin conexión a internet en este momento.';
+    } else {
+      motivo = 'No se pudo guardar (' + err.message + ').';
+    }
+
+    if (!esReintento) {
+      msg.style.color='var(--alerta)';
+      msg.textContent = motivo + ' Reintentando en 3 segundos…';
+      showToast(motivo + ' Reintentando…');
+      setTimeout(() => guardarEnLaNube_E(true), 3000);
+      return;
+    }
+
+    msg.style.color='var(--alerta)';
+    msg.textContent = motivo + ' Tu ejecución quedó guardada en este dispositivo — intenta de nuevo cuando tengas mejor señal.';
+    showToast(motivo + ' Borrador guardado.');
+    btn.disabled=false; btn.textContent='💾 Guardar ejecución';
+  }
 }
 
 // DASHBOARD
@@ -2333,51 +2375,6 @@ const EST_STYLE = {
   'Cancelada'    :{bg:'var(--e-canc)',b:'var(--e-canc-b)',t:'var(--e-canc-t)'},
   'No planificada':{bg:'var(--e-nopl)',b:'var(--e-nopl-b)',t:'var(--e-nopl-t)'},
 };
-
-
-
-
-
-
-
-
-
-
-
-
-// ── Stats ───────────────────────────────────────────────────────────
-
-
-// ── Tabs ────────────────────────────────────────────────────────────
-
-
-
-
-// ── Helpers gráficas ────────────────────────────────────────────────
-
-
-
-
-// ── Resumen ─────────────────────────────────────────────────────────
-
-
-
-// ── Personas ─────────────────────────────────────────────────────────
-
-
-// ── Áreas ────────────────────────────────────────────────────────────
-
-
-// ── Semanas ──────────────────────────────────────────────────────────
-
-
-// ── Detalle ──────────────────────────────────────────────────────────
-
-
-// ── Exportar CSV ─────────────────────────────────────────────────────
-
-
-
 
 // ══════════════════════════════════════════════════════════════════════════
 //  CUMPLIMIENTO DEL EQUIPO
