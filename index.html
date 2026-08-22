@@ -399,10 +399,13 @@ table.det tr:hover td{background:#faf6ef;}
     <h2><span class="num">3</span>Guardar</h2>
     <div class="footer-row">
       <span class="res-txt" id="resTxt">0 actividades</span>
-      <button class="btn btn-primary" id="btnGuardar_E" onclick="guardarEnLaNube_E()">💾 Guardar ejecución</button>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-ghost" onclick="recuperarBorrador_E()">Recuperar borrador</button>
+        <button class="btn btn-primary" id="btnGuardar_E" onclick="guardarEnLaNube_E()">💾 Guardar ejecución</button>
+      </div>
     </div>
     <p class="estado-msg" id="estadoMsg_E"></p>
-    <p class="hint">Puedes guardar varias veces durante la semana — cada guardado actualiza sin duplicar.</p>
+    <p class="hint">Puedes guardar varias veces durante la semana — cada guardado actualiza sin duplicar. Si un guardado falla, tu trabajo queda respaldado en este dispositivo — usa "Recuperar borrador" para traerlo de vuelta.</p>
   </div>
 
 </div>
@@ -1501,35 +1504,49 @@ function calcularHorasHombre(horaInicio, horaFin) {
 }
 
 function comprimirImagen(file, callback) {
-  const MAX_BYTES = 18000; // más liviano: sube más rápido con señal débil
-  const MAX_DIM = 640;     // dimensión máxima del lado más largo
+  const MAX_BYTES = 18000;       // meta normal — la mayoría de fotos llegan aquí
+  const HARD_CAP_BYTES = 32000;  // límite duro: nunca debe superar esto (margen amplio bajo el límite del servidor)
+  const MAX_DIM_INICIAL = 640;   // dimensión máxima del lado más largo, punto de partida
   const reader = new FileReader();
   reader.onload = function(e) {
     const img = new Image();
     img.onload = function() {
-      const canvas = document.createElement('canvas');
-      let w = img.width, h = img.height;
+      function comprimirA(dim) {
+        const canvas = document.createElement('canvas');
+        let w = img.width, h = img.height;
+        if (w > dim || h > dim) {
+          if (w > h) { h = Math.round(h * dim / w); w = dim; }
+          else        { w = Math.round(w * dim / h); h = dim; }
+        }
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
 
-      if (w > MAX_DIM || h > MAX_DIM) {
-        if (w > h) { h = Math.round(h * MAX_DIM / w); w = MAX_DIM; }
-        else        { w = Math.round(w * MAX_DIM / h); h = MAX_DIM; }
+        let quality = 0.7;
+        let dataUrl = canvas.toDataURL('image/jpeg', quality);
+        let bytes = Math.round(dataUrl.length * 0.75);
+
+        while (bytes > MAX_BYTES && quality > 0.1) {
+          quality -= 0.1;
+          dataUrl = canvas.toDataURL('image/jpeg', quality);
+          bytes = Math.round(dataUrl.length * 0.75);
+        }
+        return { dataUrl, bytes };
       }
-      canvas.width = w; canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, w, h);
 
-      let quality = 0.7;
-      let dataUrl = canvas.toDataURL('image/jpeg', quality);
-      let bytes = Math.round(dataUrl.length * 0.75);
-
-      while (bytes > MAX_BYTES && quality > 0.1) {
-        quality -= 0.1;
-        dataUrl = canvas.toDataURL('image/jpeg', quality);
-        bytes = Math.round(dataUrl.length * 0.75);
+      let dim = MAX_DIM_INICIAL;
+      let resultado = comprimirA(dim);
+      // Si la foto es muy detallada (texturas de campo, follaje, etc.) y ni
+      // siquiera al mínimo de calidad baja del límite duro, se reduce
+      // también el TAMAÑO de la imagen en pasos — esto es mucho más
+      // efectivo que seguir bajando la calidad para fotos complejas.
+      while (resultado.bytes > HARD_CAP_BYTES && dim > 240) {
+        dim -= 120;
+        resultado = comprimirA(dim);
       }
 
-      const kb = Math.round(bytes / 1024);
-      callback(dataUrl, kb);
+      const kb = Math.round(resultado.bytes / 1024);
+      callback(resultado.dataUrl, kb);
     };
     img.src = e.target.result;
   };
@@ -2027,6 +2044,36 @@ function guardarBorrador_E(){
   try{ localStorage.setItem(claveBorrador(metaDatos.responsable),JSON.stringify(recolectar_E())); }catch(_){}
 }
 
+function recuperarBorrador_E(){
+  if(!metaDatos.responsable){ showToast('Selecciona tu nombre primero'); return; }
+  try{
+    const raw = localStorage.getItem(claveBorrador(metaDatos.responsable));
+    if(!raw){ showToast('No hay borrador guardado en este dispositivo'); return; }
+    const d = JSON.parse(raw);
+    diasData_E = DIAS_E.map(()=>[]);
+    (d.actividades||[]).forEach(a=>{
+      const idx = a.diaIndex>=0 ? a.diaIndex : DIAS_E.indexOf(a.dia);
+      if(idx>=0&&idx<6) diasData_E[idx].push({
+        id:uid_E(), hora:a.hora||'', lugar:a.lugar||'', tema:a.tema||'',
+        actividad:a.actividad||'', estado:a.estado||'Planificado',
+        observacion:a.observacion||'', noPlaneada:!!a.noPlaneada,
+        // El borrador puede traer foto:null con mantenerFoto:true (fotos que
+        // ya estaban sincronizadas) — en ese caso no hay que resubirla, pero
+        // tampoco se perdió: sigue en el servidor. Solo se marca pendiente
+        // de reenvío la que sí traía datos nuevos sin guardar.
+        foto: a.foto || null,
+        fotoSubida: !a.foto && !!a.mantenerFoto,
+        horaInicio:a.horaInicio||'', horaFin:a.horaFin||'', horasHombre:a.horasHombre||'',
+      });
+    });
+    renderDias_E();
+    guardarBorrador_E();
+    showToast('Borrador recuperado ✓ — revisa y guarda de nuevo');
+  }catch(_){
+    showToast('No se pudo recuperar el borrador');
+  }
+}
+
 
 // ── Recolectar ───────────────────────────────────────────────────────
 function recolectar_E(){
@@ -2077,17 +2124,29 @@ async function guardarEnLaNube_E(esReintento){
 
     if(data.ok){
       msg.style.color='var(--cana-700)';
-      msg.textContent=`✓ Guardado el ${new Date().toLocaleString('es-GT')} — ${payload.actividades.length} actividades.`;
+      if (data.avisoFotos) {
+        // El servidor guardó todo el texto y estados, pero omitió alguna(s)
+        // foto(s) por pesadas — se avisa claramente, nada más se perdió.
+        msg.style.color='var(--terracota, #c1652f)';
+        msg.textContent=`✓ Guardado el ${new Date().toLocaleString('es-GT')} — ${payload.actividades.length} actividades. ⚠️ ${data.avisoFotos}`;
+        showToast('Guardado con aviso — revisa el mensaje ⚠️');
+      } else {
+        msg.textContent=`✓ Guardado el ${new Date().toLocaleString('es-GT')} — ${payload.actividades.length} actividades.`;
+        showToast('Ejecución guardada ✓');
+      }
       localStorage.removeItem(claveBorrador(payload.responsable));
-      showToast('Ejecución guardada ✓');
       // Todas las fotos actuales quedan sincronizadas — no se reenviarán
       // en el próximo guardado a menos que el usuario las cambie.
       diasData_E.forEach(dia => dia.forEach(a => { if (a.foto) a.fotoSubida = true; }));
       btn.disabled=false; btn.textContent='💾 Guardar ejecución';
       return;
     }
+    // El servidor rechazó el guardado — SIEMPRE se respalda localmente
+    // para que el trabajo de la sesión nunca se pierda, aunque el error
+    // haya sido explícito del servidor y no de la red.
+    guardarBorrador_E();
     msg.style.color='var(--alerta)';
-    msg.textContent='Error del servidor: '+(data.error||'desconocido');
+    msg.textContent='Error del servidor: '+(data.error||'desconocido')+' — tu ejecución quedó respaldada en este dispositivo, no se perdió.';
     showToast('Error al guardar: ' + (data.error||'desconocido'));
     btn.disabled=false; btn.textContent='💾 Guardar ejecución';
 
