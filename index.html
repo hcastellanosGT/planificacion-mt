@@ -298,7 +298,7 @@ table.det tr:hover td{background:#faf6ef;}
   </div>
   <div style="margin-top:auto;">
     <a href="https://drive.google.com/file/d/1MpFPOIvE--SRVtSD1iHzIUmoY0Mla-xA/view?usp=sharing" target="_blank" rel="noopener" style="display:block;text-align:center;background:rgba(193,101,47,.15);border:1px solid var(--terracota,#c1652f);color:var(--terracota,#c1652f);text-decoration:none;font-weight:600;font-size:12px;padding:9px;margin:0 16px 12px;border-radius:8px;">📖 Leer manual de usuario</a>
-    <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 15/08/2026</span></div>
+    <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 21/08/2026 · 22:29</span></div>
   </div>
 </nav>
 
@@ -595,7 +595,7 @@ function mostrarBloqueDomingo(contenedor) {
 
 
 
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzAuJub6H6hKzkr_bruAvDwQ0ht9UyJNOl8oPojZJbv1O_QTtZrTs7kwgVPJIz5hyKkmQ/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx5O3bu5BqUkV9y26LSdIXG6XRFQfAo3FInz1sUfadeBwyrV-bvNjUs1TrU0k6xwvZgDQ/exec';
 
 // Variables globales compartidas
 let archivos = [];
@@ -659,50 +659,12 @@ function normalizarHora(v) {
 // Equipo — nombre : departamento
 let EQUIPO = {}; // se llena dinámicamente desde la hoja "Equipo" del Sheet
 
-// Zonas / lugares
-const ZONAS = [
-  'Oficinas Ingenio','Taller Central','Empresa','Hule Sur','Particulares',
-  'CENGICAÑA','Agroindustria','Extranjero','Reunión Virtual','Hule Norte',
-  'Frutiagro','Ciudad Capital',
-  'Zona 1',
-  'Zona 1: Camantulul','Zona 1: Cristóbal','Zona 1: El Tesoro',
-  'Zona 1: La Garrucha','Zona 1: Las Flores MT','Zona 1: Los Amigos',
-  'Zona 1: Madre Tierra 2','Zona 1: Monte Cristo','Zona 1: Nuevo Mundo',
-  'Zona 1: Patricia','Zona 1: Santa Isabel','Zona 1: Tesalia',
-  'Zona 3',
-  'Zona 3: Cañaverales','Zona 3: Concepción Buena Vista','Zona 3: Limones',
-  'Zona 3: Madre Tierra','Zona 3: Palmira','Zona 3: San Salvador',
-  'Zona 3: Victory','Zona 3: Xata',
-  'Zona 4',
-  'Zona 4: Barranquilla','Zona 4: Coyolate','Zona 4: El Manantial',
-  'Zona 4: El Recreo','Zona 4: El Retiro','Zona 4: Horizontes',
-  'Zona 4: La Bendición','Zona 4: La Esperanza Mapan','Zona 4: Las Parcelas NC',
-  'Zona 4: Mixqueño','Zona 4: San Antonio Mapan','Zona 4: San Lorenzo',
-  'Zona 4: San Roque','Zona 4: Santa Marta','Zona 4: Variedades',
-  'Zona 5',
-  'Zona 5: Camelias','Zona 5: Canoas','Zona 5: Concepción La Noria',
-  'Zona 5: El Carmen','Zona 5: El Doral','Zona 5: Las Majadas',
-  'Zona 5: Málaga','Zona 5: Minar','Zona 5: Nacimiento',
-  'Zona 5: Pajuil','Zona 5: Peten','Zona 5: San Antonio',
-  'Zona 5: Santa Emilia','Zona 5: San Miguel Málaga',
-  'Zona 8',
-  'Zona 8: Aguacapa','Zona 8: La Encantadora','Zona 8: La Luz',
-  'Zona 8: La Primavera','Zona 8: Las Flores','Zona 8: Las Marias',
-  'Zona 8: Las Pozas',
-  'INAFEB',
-];
-
-// Temas de actividad
-const TEMAS = [
-  'Administrativo','Logística','Capacitación','Reporte / Informe',
-  'Reunión presencial','Reunión virtual','Ensayo','Asesorías',
-  'Supervisión de labores','Preparación de Tierras','Fertilización',
-  'Siembra Mecanizada','Resiembra Mecánica','Subproductos',
-  'Sacado de piedra manual','Sacado de piedra mecánico','Muestreo de suelos',
-  'Madurantes','Herbicidas','Inhibidor','Bioestimulantes','Premadurante',
-  'Malezas','Plagas','Semillero','Riego','Diseño de campo',
-  'Tomas agua fábrica','Elaboración de planos','Maquinaria','Muestreo',
-];
+// Zonas / lugares y Temas de actividad — ya NO están fijos en el código.
+// Se cargan dinámicamente desde la hoja "Catalogos" del Sheet (ver
+// cargarCatalogos() más abajo), para poder agregar/quitar opciones editando
+// directo el Sheet, sin necesidad de una nueva implementación.
+const ZONAS = [];
+const TEMAS = [];
 const DIAS = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 let diasData_P = DIAS.map(() => []);
 let semanaCalculada = '';
@@ -758,6 +720,29 @@ async function cargarEquipoSelect() {
   } catch(_) { showToast('No se pudo cargar la lista del equipo'); }
 }
 cargarEquipoSelect();
+
+// Carga Lugares y Temas desde la hoja "Catalogos" del Sheet.
+// ZONAS/TEMAS/ZONAS_E/TEMAS_E se mutan en el mismo arreglo (no se reasignan)
+// para que todo el código que ya las usa siga funcionando sin más cambios.
+async function cargarCatalogos() {
+  try {
+    const res = await fetch(WEB_APP_URL + '?modo=catalogos&t=' + Date.now());
+    const data = await res.json();
+    if (data.ok) {
+      const lugares = data.lugares || [];
+      const temas = data.temas || [];
+      ZONAS.length = 0; ZONAS.push(...lugares);
+      TEMAS.length = 0; TEMAS.push(...temas);
+      ZONAS_E.length = 0; ZONAS_E.push(...lugares);
+      TEMAS_E.length = 0; TEMAS_E.push(...temas);
+      // Si los días de Planificación ya estaban en pantalla (llegaron antes
+      // que el catálogo), refrescar para que las opciones ya aparezcan.
+      const cardAct = document.getElementById('cardActividades');
+      if (cardAct && cardAct.style.display !== 'none') renderDias_P();
+    }
+  } catch(_) { showToast('No se pudieron cargar lugares y temas — reintenta más tarde'); }
+}
+cargarCatalogos();
 
 // Preseleccionar próximo lunes al cargar
 autoSeleccionarSemana();
@@ -1554,9 +1539,9 @@ function comprimirImagen(file, callback) {
 // EJECUCIÓN
 let EQUIPO_E = {}; // se llena dinámicamente desde la hoja "Equipo" del Sheet
 
-const ZONAS_E = ['Oficinas Ingenio','Taller Central','Empresa','Hule Sur','Particulares','CENGICAÑA','Agroindustria','Extranjero','Reunión Virtual','Hule Norte','Frutiagro','Ciudad Capital','Zona 1','Zona 1: Camantulul','Zona 1: Cristóbal','Zona 1: El Tesoro','Zona 1: La Garrucha','Zona 1: Las Flores MT','Zona 1: Los Amigos','Zona 1: Madre Tierra 2','Zona 1: Monte Cristo','Zona 1: Nuevo Mundo','Zona 1: Patricia','Zona 1: Santa Isabel','Zona 1: Tesalia','Zona 3','Zona 3: Cañaverales','Zona 3: Concepción Buena Vista','Zona 3: Limones','Zona 3: Madre Tierra','Zona 3: Palmira','Zona 3: San Salvador','Zona 3: Victory','Zona 3: Xata','Zona 4','Zona 4: Barranquilla','Zona 4: Coyolate','Zona 4: El Manantial','Zona 4: El Recreo','Zona 4: El Retiro','Zona 4: Horizontes','Zona 4: La Bendición','Zona 4: La Esperanza Mapan','Zona 4: Las Parcelas NC','Zona 4: Mixqueño','Zona 4: San Antonio Mapan','Zona 4: San Lorenzo','Zona 4: San Roque','Zona 4: Santa Marta','Zona 4: Variedades','Zona 5','Zona 5: Camelias','Zona 5: Canoas','Zona 5: Concepción La Noria','Zona 5: El Carmen','Zona 5: El Doral','Zona 5: Las Majadas','Zona 5: Málaga','Zona 5: Minar','Zona 5: Nacimiento','Zona 5: Pajuil','Zona 5: Peten','Zona 5: San Antonio','Zona 5: Santa Emilia','Zona 5: San Miguel Málaga','Zona 8','Zona 8: Aguacapa','Zona 8: La Encantadora','Zona 8: La Luz','Zona 8: La Primavera','Zona 8: Las Flores','Zona 8: Las Marias','Zona 8: Las Pozas','INAFEB'];
-
-const TEMAS_E = ['Administrativo','Logística','Capacitación','Reporte / Informe','Reunión presencial','Reunión virtual','Ensayo','Asesorías','Supervisión de labores','Preparación de Tierras','Fertilización','Siembra Mecanizada','Resiembra Mecánica','Subproductos','Sacado de piedra manual','Sacado de piedra mecánico','Muestreo de suelos','Madurantes','Herbicidas','Inhibidor','Bioestimulantes','Premadurante','Malezas','Plagas','Semillero','Riego','Diseño de campo','Tomas agua fábrica','Elaboración de planos','Maquinaria','Muestreo'];
+// Igual que ZONAS/TEMAS — se llenan desde la hoja "Catalogos" en cargarCatalogos()
+const ZONAS_E = [];
+const TEMAS_E = [];
 
 // Estados disponibles para actividades planificadas
 // Estados con colores sólidos para botones activos
@@ -1699,6 +1684,9 @@ function aplicarDatos(fuente){
       actividad:a.actividad||'', estado:a.estado||'Planificado',
       observacion:a.observacion||'', noPlaneada:!!a.noPlaneada,
       foto: (a.foto && String(a.foto).startsWith('data:image')) ? a.foto : null,
+      // Si la foto ya viene del servidor, se marca como sincronizada — no se
+      // reenviará en el próximo guardado a menos que el usuario la cambie.
+      fotoSubida: !!(a.foto && String(a.foto).startsWith('data:image')),
       horaInicio:a.horaInicio||'', horaFin:a.horaFin||'', horasHombre:a.horasHombre||'',
     });
   });
@@ -1885,6 +1873,7 @@ function mkAct(diaIdx, act, noPlaneada) {
     showToast('⏳ Comprimiendo foto...');
     comprimirImagen(file, (dataUrl, kb) => {
       act.foto = dataUrl;
+      act.fotoSubida = false; // cambió — hay que reenviarla en el próximo guardado
       guardarBorrador_E();
       renderDias_E();
       showToast('📷 Foto guardada (' + kb + 'KB)');
@@ -1925,7 +1914,7 @@ function mkAct(diaIdx, act, noPlaneada) {
     btnRm.textContent = '✕';
     btnRm.title = 'Quitar foto';
     btnRm.style.cssText = 'font-size:11px;padding:3px 7px;border:1px solid #ddd;border-radius:6px;cursor:pointer;background:#fff;color:var(--alerta);align-self:flex-start;';
-    btnRm.onclick = () => { act.foto = null; guardarBorrador_E(); renderDias_E(); };
+    btnRm.onclick = () => { act.foto = null; act.fotoSubida = false; guardarBorrador_E(); renderDias_E(); };
     fotoRow.appendChild(btnRm);
   }
 
@@ -2042,12 +2031,20 @@ function guardarBorrador_E(){
 // ── Recolectar ───────────────────────────────────────────────────────
 function recolectar_E(){
   const acts=[];
-  diasData_E.forEach((dia,i)=>dia.forEach(a=>acts.push({
-    dia:DIAS_E[i],diaIndex:i,fecha:fechaPara_E(i),hora:a.hora,lugar:a.lugar,tema:a.tema,
-    actividad:a.actividad,estado:a.estado,observacion:a.observacion||'',
-    noPlaneada:!!a.noPlaneada, foto:(a.foto && String(a.foto).startsWith('data:image')) ? a.foto : null,
-    horaInicio:a.horaInicio||'', horaFin:a.horaFin||'', horasHombre:a.horasHombre||'',
-  })));
+  diasData_E.forEach((dia,i)=>dia.forEach(a=>{
+    // Si la foto ya se guardó antes y no cambió, no se reenvía — ahorra
+    // datos en señal débil. El servidor la conserva automáticamente
+    // (ver mantenerFoto) buscándola por día+hora+lugar+tema+actividad.
+    const sinCambios = !!(a.foto && a.fotoSubida);
+    acts.push({
+      dia:DIAS_E[i],diaIndex:i,fecha:fechaPara_E(i),hora:a.hora,lugar:a.lugar,tema:a.tema,
+      actividad:a.actividad,estado:a.estado,observacion:a.observacion||'',
+      noPlaneada:!!a.noPlaneada,
+      foto: sinCambios ? null : ((a.foto && String(a.foto).startsWith('data:image')) ? a.foto : null),
+      mantenerFoto: sinCambios,
+      horaInicio:a.horaInicio||'', horaFin:a.horaFin||'', horasHombre:a.horasHombre||'',
+    });
+  }));
   return {...metaDatos,actividades:acts,tipo:'ejecucion',generadoEn:new Date().toISOString()};
 }
 
@@ -2060,8 +2057,13 @@ async function guardarEnLaNube_E(esReintento){
   const btn=document.getElementById('btnGuardar_E'); const msg=document.getElementById('estadoMsg_E');
   btn.disabled=true; btn.textContent = esReintento ? 'Reintentando…' : 'Guardando…';
 
-  const tieneFotos = payload.actividades.some(a => a.foto);
-  const TIMEOUT_MS = tieneFotos ? 45000 : 20000; // más tiempo si hay fotos pesadas
+  // Con el cambio anterior, payload.actividades solo trae foto en las
+  // actividades nuevas/cambiadas (las ya sincronizadas van con foto:null
+  // y mantenerFoto:true) — así que esto refleja el peso REAL de este envío,
+  // no el total de fotos acumuladas en la semana.
+  const fotosEnviadas = payload.actividades.filter(a => a.foto).length;
+  const tieneFotos = fotosEnviadas > 0;
+  const TIMEOUT_MS = tieneFotos ? Math.min(20000 + fotosEnviadas * 12000, 90000) : 20000;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
@@ -2078,6 +2080,9 @@ async function guardarEnLaNube_E(esReintento){
       msg.textContent=`✓ Guardado el ${new Date().toLocaleString('es-GT')} — ${payload.actividades.length} actividades.`;
       localStorage.removeItem(claveBorrador(payload.responsable));
       showToast('Ejecución guardada ✓');
+      // Todas las fotos actuales quedan sincronizadas — no se reenviarán
+      // en el próximo guardado a menos que el usuario las cambie.
+      diasData_E.forEach(dia => dia.forEach(a => { if (a.foto) a.fotoSubida = true; }));
       btn.disabled=false; btn.textContent='💾 Guardar ejecución';
       return;
     }
