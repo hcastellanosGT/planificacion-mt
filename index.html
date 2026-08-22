@@ -298,7 +298,7 @@ table.det tr:hover td{background:#faf6ef;}
   </div>
   <div style="margin-top:auto;">
     <a href="https://drive.google.com/file/d/1MpFPOIvE--SRVtSD1iHzIUmoY0Mla-xA/view?usp=sharing" target="_blank" rel="noopener" style="display:block;text-align:center;background:rgba(193,101,47,.15);border:1px solid var(--terracota,#c1652f);color:var(--terracota,#c1652f);text-decoration:none;font-weight:600;font-size:12px;padding:9px;margin:0 16px 12px;border-radius:8px;">📖 Leer manual de usuario</a>
-    <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 22/08/2026 · 08:47</span></div>
+    <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 22/08/2026 · 09:15</span></div>
   </div>
 </nav>
 
@@ -598,7 +598,7 @@ function mostrarBloqueDomingo(contenedor) {
 
 
 
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbz0KKlO_xeb3ied_6H7TgIUcmP0Wn9kfnad7npnBRgJtiSTgjt35zQ4TJRhoCgQxU4U4Q/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzBt7lYS2RJvwx5UXWeRQKV_Di0fAp0gebmzRYn60XhYEkiaCs5i5lbySIgXj-e-lOI7Q/exec';
 
 // Variables globales compartidas
 let archivos = [];
@@ -1704,6 +1704,7 @@ function aplicarDatos(fuente){
       // Si la foto ya viene del servidor, se marca como sincronizada — no se
       // reenviará en el próximo guardado a menos que el usuario la cambie.
       fotoSubida: !!(a.foto && String(a.foto).startsWith('data:image')),
+      fotoEliminada: false,
       horaInicio:a.horaInicio||'', horaFin:a.horaFin||'', horasHombre:a.horasHombre||'',
     });
   });
@@ -1891,6 +1892,7 @@ function mkAct(diaIdx, act, noPlaneada) {
     comprimirImagen(file, (dataUrl, kb) => {
       act.foto = dataUrl;
       act.fotoSubida = false; // cambió — hay que reenviarla en el próximo guardado
+      act.fotoEliminada = false;
       guardarBorrador_E();
       renderDias_E();
       showToast('📷 Foto guardada (' + kb + 'KB)');
@@ -1931,7 +1933,7 @@ function mkAct(diaIdx, act, noPlaneada) {
     btnRm.textContent = '✕';
     btnRm.title = 'Quitar foto';
     btnRm.style.cssText = 'font-size:11px;padding:3px 7px;border:1px solid #ddd;border-radius:6px;cursor:pointer;background:#fff;color:var(--alerta);align-self:flex-start;';
-    btnRm.onclick = () => { act.foto = null; act.fotoSubida = false; guardarBorrador_E(); renderDias_E(); };
+    btnRm.onclick = () => { act.foto = null; act.fotoSubida = false; act.fotoEliminada = true; guardarBorrador_E(); renderDias_E(); };
     fotoRow.appendChild(btnRm);
   }
 
@@ -2057,12 +2059,13 @@ function recuperarBorrador_E(){
         id:uid_E(), hora:a.hora||'', lugar:a.lugar||'', tema:a.tema||'',
         actividad:a.actividad||'', estado:a.estado||'Planificado',
         observacion:a.observacion||'', noPlaneada:!!a.noPlaneada,
-        // El borrador puede traer foto:null con mantenerFoto:true (fotos que
-        // ya estaban sincronizadas) — en ese caso no hay que resubirla, pero
-        // tampoco se perdió: sigue en el servidor. Solo se marca pendiente
-        // de reenvío la que sí traía datos nuevos sin guardar.
+        // El borrador puede traer foto:null sin fotoEliminada (fotos que ya
+        // estaban sincronizadas) — en ese caso no hay que resubirla, pero
+        // tampoco se perdió: el servidor la conserva por defecto. Solo se
+        // marca pendiente de reenvío la que sí traía datos nuevos sin guardar.
         foto: a.foto || null,
-        fotoSubida: !a.foto && !!a.mantenerFoto,
+        fotoSubida: !a.foto && !a.fotoEliminada,
+        fotoEliminada: !!a.fotoEliminada,
         horaInicio:a.horaInicio||'', horaFin:a.horaFin||'', horasHombre:a.horasHombre||'',
       });
     });
@@ -2080,15 +2083,16 @@ function recolectar_E(){
   const acts=[];
   diasData_E.forEach((dia,i)=>dia.forEach(a=>{
     // Si la foto ya se guardó antes y no cambió, no se reenvía — ahorra
-    // datos en señal débil. El servidor la conserva automáticamente
-    // (ver mantenerFoto) buscándola por día+hora+lugar+tema+actividad.
+    // datos en señal débil. El servidor CONSERVA por defecto lo que ya
+    // tenía guardado; solo se borra si se manda fotoEliminada=true (el
+    // usuario le dio "quitar foto" explícitamente en la app).
     const sinCambios = !!(a.foto && a.fotoSubida);
     acts.push({
       dia:DIAS_E[i],diaIndex:i,fecha:fechaPara_E(i),hora:a.hora,lugar:a.lugar,tema:a.tema,
       actividad:a.actividad,estado:a.estado,observacion:a.observacion||'',
       noPlaneada:!!a.noPlaneada,
       foto: sinCambios ? null : ((a.foto && String(a.foto).startsWith('data:image')) ? a.foto : null),
-      mantenerFoto: sinCambios,
+      fotoEliminada: !!a.fotoEliminada,
       horaInicio:a.horaInicio||'', horaFin:a.horaFin||'', horasHombre:a.horasHombre||'',
     });
   }));
@@ -2105,9 +2109,9 @@ async function guardarEnLaNube_E(esReintento){
   btn.disabled=true; btn.textContent = esReintento ? 'Reintentando…' : 'Guardando…';
 
   // Con el cambio anterior, payload.actividades solo trae foto en las
-  // actividades nuevas/cambiadas (las ya sincronizadas van con foto:null
-  // y mantenerFoto:true) — así que esto refleja el peso REAL de este envío,
-  // no el total de fotos acumuladas en la semana.
+  // actividades nuevas/cambiadas (las ya sincronizadas van con foto:null,
+  // y el servidor conserva por defecto lo que ya tenía) — así que esto
+  // refleja el peso REAL de este envío, no el total acumulado en la semana.
   const fotosEnviadas = payload.actividades.filter(a => a.foto).length;
   const tieneFotos = fotosEnviadas > 0;
   const TIMEOUT_MS = tieneFotos ? Math.min(20000 + fotosEnviadas * 12000, 90000) : 20000;
