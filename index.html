@@ -298,7 +298,7 @@ table.det tr:hover td{background:#faf6ef;}
   </div>
   <div style="margin-top:auto;">
     <a href="https://drive.google.com/file/d/1MpFPOIvE--SRVtSD1iHzIUmoY0Mla-xA/view?usp=sharing" target="_blank" rel="noopener" style="display:block;text-align:center;background:rgba(193,101,47,.15);border:1px solid var(--terracota,#c1652f);color:var(--terracota,#c1652f);text-decoration:none;font-weight:600;font-size:12px;padding:9px;margin:0 16px 12px;border-radius:8px;">📖 Leer manual de usuario</a>
-    <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 05/09/2026 · 08:23</span></div>
+    <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 11/09/2026 · 17:52</span></div>
   </div>
 </nav>
 
@@ -463,18 +463,39 @@ table.det tr:hover td{background:#faf6ef;}
   <div class="page" id="page-cumplimiento">
     <div class="top"><div class="top-inner">
       <div><p class="eyebrow">División Agrícola · Madre Tierra</p><h1>Cumplimiento del equipo</h1><p class="sub">Quién cumple, cancela, reprograma y reporta actividades no planificadas.</p></div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-ghost" id="btnActualizarC" onclick="cargarCumplimiento()" style="border-color:rgba(255,255,255,.4);color:#fff;">🔄 Actualizar</button>
-      </div>
     </div></div>
     <div class="wrap">
-      <h2 style="margin:20px 0 10px;color:var(--cana-900);">📅 Semana anterior</h2>
-      <p id="estadoCargaC1" style="font-size:12px;color:var(--texto-suave);margin-bottom:14px;"></p>
-      <div id="destacadosC1" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:20px;"></div>
+      <div class="card">
+        <h2>📆 Rango de semanas</h2>
+        <div class="filtros-grid">
+          <div class="filtro-group">
+            <label for="selCumpDesde">Desde</label>
+            <select id="selCumpDesde"></select>
+          </div>
+          <div class="filtro-group">
+            <label for="selCumpHasta">Hasta</label>
+            <select id="selCumpHasta"></select>
+          </div>
+          <div class="filtro-group">
+            <label for="selCumpResp">Responsable</label>
+            <select id="selCumpResp"><option value="">Todos</option></select>
+          </div>
+          <div class="filtro-group">
+            <button class="btn btn-primary" id="btnActualizarC" onclick="cargarCumplimiento()" style="width:100%;justify-content:center;">🔄 Actualizar</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+          <button class="btn btn-ghost" onclick="presetCumplimiento('anterior')">Semana pasada</button>
+          <button class="btn btn-ghost" onclick="presetCumplimiento('4semanas')">Últimas 4 semanas</button>
+          <button class="btn btn-ghost" onclick="presetCumplimiento('zafra')">Toda la zafra</button>
+        </div>
+      </div>
+      <p id="estadoCargaC" style="font-size:12px;color:var(--texto-suave);margin-bottom:14px;"></p>
+      <div id="destacadosC" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:20px;"></div>
       <div class="card">
         <h2>📋 Detalle por persona</h2>
         <div style="overflow-x:auto;">
-          <table class="cal-matrix" id="tablaCumplimiento1" style="min-width:640px;">
+          <table class="cal-matrix" id="tablaCumplimiento" style="min-width:640px;">
             <thead>
               <tr>
                 <th style="text-align:left;">Responsable</th>
@@ -486,34 +507,11 @@ table.det tr:hover td{background:#faf6ef;}
                 <th>% Cumplimiento</th>
               </tr>
             </thead>
-            <tbody id="tbodyCumplimiento1"></tbody>
+            <tbody id="tbodyCumplimiento"></tbody>
           </table>
         </div>
       </div>
-      <div id="emptyC1" style="display:none;text-align:center;padding:40px;color:var(--texto-suave);">Aún no hay datos de ejecución para la semana anterior.</div>
-      <h2 style="margin:28px 0 6px;color:var(--cana-900);">📊 Últimas 4 semanas</h2>
-      <p id="estadoCargaC4" style="font-size:12px;color:var(--texto-suave);margin-bottom:14px;"></p>
-      <div id="destacadosC4" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:20px;"></div>
-      <div class="card">
-        <h2>📋 Detalle por persona</h2>
-        <div style="overflow-x:auto;">
-          <table class="cal-matrix" id="tablaCumplimiento4" style="min-width:640px;">
-            <thead>
-              <tr>
-                <th style="text-align:left;">Responsable</th>
-                <th>Total</th>
-                <th>Realizadas</th>
-                <th>Reprogramadas</th>
-                <th>Canceladas</th>
-                <th>No planificadas</th>
-                <th>% Cumplimiento</th>
-              </tr>
-            </thead>
-            <tbody id="tbodyCumplimiento4"></tbody>
-          </table>
-        </div>
-      </div>
-      <div id="emptyC4" style="display:none;text-align:center;padding:40px;color:var(--texto-suave);">Aún no hay datos de ejecución en las últimas 4 semanas.</div>
+      <div id="emptyC" style="display:none;text-align:center;padding:40px;color:var(--texto-suave);">No hay datos de ejecución para el rango seleccionado.</div>
     </div>
   </div>
 
@@ -598,7 +596,7 @@ function mostrarBloqueDomingo(contenedor) {
 
 
 
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbw3G6srNQEkEOxT_OqRLpdvusOVx9LqzF1HS94QmlqrvJTvV5EzMFJYOHuj6tQiQ5mEeg/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzcCqw2aTbCiOnOg_n-3MSNQAYGuKW-6dH0_yLgsBQ85lnGjqSDEim-JSWW4CEpFCoe1A/exec';
 
 // Variables globales compartidas
 let archivos = [];
@@ -2453,43 +2451,123 @@ const EST_STYLE = {
 // ══════════════════════════════════════════════════════════════════════════
 let cumplimientoCargado = false;
 
+// Genera todas las semanas desde el inicio de la zafra actual hasta la
+// última semana ya COMPLETADA (no incluye la semana en curso), en orden
+// cronológico ascendente. Cada entrada trae zafra+semana+etiqueta legible.
+function generarListaSemanasCumplimiento(){
+  const hoy = new Date();
+  const dow = hoy.getDay();
+  const lunesActual = new Date(hoy);
+  lunesActual.setDate(hoy.getDate() + (dow === 0 ? 1 : 1 - dow));
+  const lunesUltimaCompletada = new Date(lunesActual);
+  lunesUltimaCompletada.setDate(lunesActual.getDate() - 7);
+
+  const zafraActual = calcularZafra(lunesUltimaCompletada);
+  const anioInicio = parseInt(zafraActual.split('-')[0], 10);
+  const inicioZafra = new Date(anioInicio, 10, 1);
+  const diaSemanaInicio = inicioZafra.getDay();
+  const offsetLunes = diaSemanaInicio === 0 ? -6 : 1 - diaSemanaInicio;
+  const lunesSemana1 = new Date(inicioZafra);
+  lunesSemana1.setDate(inicioZafra.getDate() + offsetLunes);
+
+  const semanas = [];
+  const fmt = d => d.toLocaleDateString('es-GT', { day:'2-digit', month:'short' });
+  let cursor = new Date(lunesSemana1);
+  while (cursor <= lunesUltimaCompletada) {
+    const numSemana = calcularSemana(cursor);
+    const zafra = calcularZafra(cursor);
+    const domingo = new Date(cursor); domingo.setDate(cursor.getDate() + 6);
+    semanas.push({
+      zafra, semana: numSemana,
+      valor: zafra + '|' + numSemana,
+      etiqueta: `Semana ${numSemana} · ${fmt(cursor)}–${fmt(domingo)}`
+    });
+    cursor.setDate(cursor.getDate() + 7);
+  }
+  return semanas;
+}
+
+function poblarSelectoresCumplimiento(){
+  const semanas = generarListaSemanasCumplimiento();
+  const selD = document.getElementById('selCumpDesde');
+  const selH = document.getElementById('selCumpHasta');
+  if (!selD || !selH || !semanas.length) return;
+  const opciones = semanas.map(s => `<option value="${s.valor}">${s.etiqueta}</option>`).join('');
+  selD.innerHTML = opciones;
+  selH.innerHTML = opciones;
+  // Por defecto: últimas 4 semanas completadas (mismo comportamiento de antes)
+  const n = semanas.length;
+  selD.value = semanas[Math.max(0, n - 4)].valor;
+  selH.value = semanas[n - 1].valor;
+}
+
+// Llena el filtro "Responsable" con la lista del equipo. Se carga por su
+// cuenta (no depende de que otra pantalla ya haya cargado el equipo antes).
+async function poblarFiltroResponsableCumplimiento(){
+  const sel = document.getElementById('selCumpResp');
+  if (!sel || WEB_APP_URL === 'PEGA_AQUI_TU_URL') return;
+  try {
+    const res = await fetch(WEB_APP_URL + '?modo=equipo&t=' + Date.now());
+    const data = await res.json();
+    if (data.ok && data.equipo) {
+      const nombres = data.equipo.map(p => p.nombre).sort();
+      sel.innerHTML = '<option value="">Todos</option>' +
+        nombres.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+    }
+  } catch(_) { /* si falla, el filtro se queda solo con "Todos" */ }
+}
+
+function presetCumplimiento(tipo){
+  const semanas = generarListaSemanasCumplimiento();
+  const n = semanas.length;
+  if (!n) return;
+  const selD = document.getElementById('selCumpDesde');
+  const selH = document.getElementById('selCumpHasta');
+  if (tipo === 'anterior') {
+    selD.value = semanas[n - 1].valor;
+    selH.value = semanas[n - 1].valor;
+  } else if (tipo === '4semanas') {
+    selD.value = semanas[Math.max(0, n - 4)].valor;
+    selH.value = semanas[n - 1].valor;
+  } else if (tipo === 'zafra') {
+    selD.value = semanas[0].valor;
+    selH.value = semanas[n - 1].valor;
+  }
+  cargarCumplimiento();
+}
+
 async function cargarCumplimiento(){
   if(WEB_APP_URL === 'PEGA_AQUI_TU_URL'){ showToast('Falta configurar la URL de conexión'); return; }
   const btn = document.getElementById('btnActualizarC');
   if(btn){ btn.disabled = true; btn.textContent = '🔄 Cargando…'; }
   try{
-    // Lunes de la última semana COMPLETADA:
-    // domingo → la que cerró ayer; lun-sáb → la semana pasada
-    const hoy = new Date();
-    const dow = hoy.getDay();
-    const lunesAnterior = new Date(hoy);
-    lunesAnterior.setDate(hoy.getDate() + (dow === 0 ? -6 : 1 - dow - 7));
+    const semanas = generarListaSemanasCumplimiento();
+    const selD = document.getElementById('selCumpDesde');
+    const selH = document.getElementById('selCumpHasta');
+    if (!selD.value || !selH.value) poblarSelectoresCumplimiento();
+    const idxD = semanas.findIndex(s => s.valor === selD.value);
+    const idxH = semanas.findIndex(s => s.valor === selH.value);
+    const [ini, fin] = (idxD <= idxH) ? [idxD, idxH] : [idxH, idxD];
+    const rango = semanas.slice(Math.max(0, ini), fin + 1);
 
-    // Últimas 4 semanas completadas
-    const semanas = [];
-    for(let i = 0; i < 4; i++){
-      const d = new Date(lunesAnterior);
-      d.setDate(lunesAnterior.getDate() - 7*i);
-      semanas.push(calcularSemana(d));
-    }
-
-    const res = await fetch(WEB_APP_URL + '?modo=cumplimiento&semana=' + semanas.join(',') + '&t=' + Date.now());
+    const res = await fetch(WEB_APP_URL + '?modo=cumplimiento&rango=' + encodeURIComponent(rango.map(s=>s.valor).join(',')) + '&t=' + Date.now());
     const data = await res.json();
     if(!data.ok){ showToast('Error: ' + (data.error||'')); return; }
     cumplimientoCargado = true;
 
-    const registros = data.registros || [];
-    const regSemana1     = registros.filter(r => String(r.semana) === String(semanas[0]));
-    const regUltimas4    = registros;
+    const filtroResp = document.getElementById('selCumpResp').value;
+    let registros = data.registros || [];
+    if (filtroResp) registros = registros.filter(r => r.responsable === filtroResp);
 
-    renderCumplimiento(regSemana1, '1');
-    renderCumplimiento(regUltimas4, '4');
+    renderCumplimiento(registros);
 
     const ahora = new Date().toLocaleString('es-GT');
-    const est1 = document.getElementById('estadoCargaC1');
-    const est4 = document.getElementById('estadoCargaC4');
-    if(est1) est1.textContent = `Semana ${semanas[0]} · Actualizado: ${ahora}`;
-    if(est4) est4.textContent = `Semanas ${semanas[3]} a ${semanas[0]} · Actualizado: ${ahora}`;
+    const est = document.getElementById('estadoCargaC');
+    const etiquetaRango = rango.length <= 1
+      ? (rango[0] ? rango[0].etiqueta : '')
+      : `${rango[0].etiqueta} → ${rango[rango.length-1].etiqueta}`;
+    const etiquetaResp = filtroResp ? ` · ${filtroResp}` : ' · Todos';
+    if(est) est.textContent = `${etiquetaRango}${etiquetaResp} · Actualizado: ${ahora}`;
   }catch(e){
     showToast('Sin conexión con la hoja de datos');
   }finally{
@@ -2497,11 +2575,11 @@ async function cargarCumplimiento(){
   }
 }
 
-function renderCumplimiento(registros, sufijo){
-  const cont  = document.getElementById('destacadosC'+sufijo);
-  const tbody = document.getElementById('tbodyCumplimiento'+sufijo);
-  const empty = document.getElementById('emptyC'+sufijo);
-  const tabla = document.getElementById('tablaCumplimiento'+sufijo);
+function renderCumplimiento(registros){
+  const cont  = document.getElementById('destacadosC');
+  const tbody = document.getElementById('tbodyCumplimiento');
+  const empty = document.getElementById('emptyC');
+  const tabla = document.getElementById('tablaCumplimiento');
   cont.innerHTML = ''; tbody.innerHTML = '';
 
   if(!registros.length){
@@ -2581,6 +2659,8 @@ function renderCumplimiento(registros, sufijo){
 
 // ── INICIO DE LA APP ─────────────────────────────────────────────────────────
 // La app abre directo en la planificación del equipo
+poblarSelectoresCumplimiento();
+poblarFiltroResponsableCumplimiento();
 navTo('analisis');
 </script>
 
