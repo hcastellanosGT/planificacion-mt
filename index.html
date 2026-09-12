@@ -344,8 +344,7 @@ table.det tr:hover td{background:#faf6ef;}
         <h2><span class="num">3</span>Guardar</h2>
         <span class="resumen" id="resumen" style="font-family:var(--font-mono);font-size:12px;color:var(--texto-suave);"></span>
       <div style="margin-bottom:14px;">
-          <button class="btn btn-ghost" id="btnCargarPlan" onclick="cargarMiPlanificacion()" style="display:none;width:100%;justify-content:center;">📥 Cargar mi programación guardada</button>
-          <button class="btn btn-ghost" id="btnCargarSugerida" onclick="cargarSemanaSugerida()" style="display:none;width:100%;justify-content:center;margin-top:8px;">📋 Cargar semana anterior (sugerida)</button>
+          <button class="btn btn-ghost" id="btnCargarSugerida" onclick="cargarSemanaSugerida()" style="display:none;width:100%;justify-content:center;">📋 Cargar semana anterior (sugerida)</button>
           <p id="estadoCargaPlan" style="font-size:12px;color:var(--texto-suave);font-family:var(--font-mono);margin:6px 0 0;min-height:16px;"></p>
         </div>
         <div class="footer-row">
@@ -669,6 +668,9 @@ const ZONAS = [];
 const TEMAS = [];
 const DIAS = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 let diasData_P = DIAS.map(() => []);
+// Se pone en true mientras recuperarBorrador() está restaurando datos
+// locales, para que la carga automática del servidor no los sobreescriba.
+let cargaAutomaticaSuprimida = false;
 let semanaCalculada = '';
 
 // ─── ZAFRA Y SEMANA ───────────────────────────────────────────────────────────
@@ -796,8 +798,6 @@ function mostrarSecciones() {
   if (esDomingo()) {
     document.getElementById('cardActividades').style.display = 'none';
     document.getElementById('cardGuardar').style.display = 'none';
-    const btnC = document.getElementById('btnCargarPlan');
-    if (btnC) btnC.style.display = 'none';
     const btnS = document.getElementById('btnCargarSugerida');
     if (btnS) btnS.style.display = 'none';
     mostrarBloqueDomingo(document.getElementById('bannerCierre'));
@@ -806,11 +806,16 @@ function mostrarSecciones() {
   const ok = selR.value && document.getElementById('selLunes').value;
   document.getElementById('cardActividades').style.display = ok ? '' : 'none';
   document.getElementById('cardGuardar').style.display = ok ? '' : 'none';
-  const btnC = document.getElementById('btnCargarPlan');
-  if (btnC) btnC.style.display = ok ? '' : 'none';
   const btnS = document.getElementById('btnCargarSugerida');
   if (btnS) btnS.style.display = ok ? '' : 'none';
-  if (ok) { renderDias_P(); iniciarContador(); }
+  if (ok) {
+    iniciarContador();
+    // Al tener responsable + semana, se carga automáticamente lo ya
+    // guardado (si existe) — salvo que se esté recuperando un borrador
+    // local en este mismo instante, para no pisarlo con datos del servidor.
+    if (!cargaAutomaticaSuprimida) cargarPlanificacionActual();
+    else renderDias_P();
+  }
 }
 
 // ─── DÍAS Y ACTIVIDADES ───────────────────────────────────────────────────────
@@ -1026,6 +1031,7 @@ function guardarBorrador_P() {
 }
 
 function recuperarBorrador() {
+  cargaAutomaticaSuprimida = true;
   try {
     const raw = localStorage.getItem('borrador_mt_prog');
     if (!raw) { showToast('No hay borrador guardado en este dispositivo'); return; }
@@ -1061,6 +1067,8 @@ function recuperarBorrador() {
     showToast('Borrador recuperado ✓');
   } catch(_) {
     showToast('No se pudo recuperar el borrador');
+  } finally {
+    cargaAutomaticaSuprimida = false;
   }
 }
 
@@ -1263,12 +1271,11 @@ async function cargarSemanaSugerida() {
   }
 }
 
-async function cargarMiPlanificacion() {
+async function cargarPlanificacionActual() {
   const nombre = selR.value;
-  if (!nombre) { showToast('Selecciona tu nombre primero'); return; }
-  const btn    = document.getElementById('btnCargarPlan');
+  if (!nombre) return;
   const estado = document.getElementById('estadoCargaPlan');
-  btn.disabled = true; btn.textContent = 'Cargando…';
+  if (estado) { estado.textContent = 'Cargando tu programación…'; estado.style.color = 'var(--texto-suave)'; }
   try {
     const res  = await fetch(WEB_APP_URL + '?semana=' + semanaCalculada + '&t=' + Date.now());
     const data = await res.json();
@@ -1278,9 +1285,9 @@ async function cargarMiPlanificacion() {
       p => p.responsable === nombre && String(p.semana) === semanaTarget
     );
     if (!persona || !persona.actividades.length) {
-      estado.textContent = 'No hay programación guardada para esta semana.';
-      estado.style.color = 'var(--texto-suave)';
-      showToast('Sin datos guardados para esta semana');
+      diasData_P = DIAS.map(() => []);
+      renderDias_P();
+      if (estado) { estado.textContent = 'Aún no se ha trabajado la planificación de esta semana.'; estado.style.color = 'var(--texto-suave)'; }
     } else {
       diasData_P = DIAS.map(() => []);
       persona.actividades.forEach(a => {
@@ -1293,17 +1300,11 @@ async function cargarMiPlanificacion() {
       });
       diasData_P.forEach((_, i) => ordenarDia(i));
       renderDias_P();
-      estado.textContent = `✓ ${persona.actividades.length} actividades cargadas — semana ${semanaTarget}`;
-      estado.style.color = 'var(--cana-700)';
-      showToast(`${persona.actividades.length} actividades cargadas ✓`);
+      if (estado) { estado.textContent = `✓ ${persona.actividades.length} actividades cargadas — semana ${semanaTarget}`; estado.style.color = 'var(--cana-700)'; }
     }
   } catch (err) {
-    estado.textContent = 'Sin conexión — intenta de nuevo';
-    estado.style.color = 'var(--alerta)';
-    showToast('Error: ' + err.message);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '📥 Cargar mi programación guardada';
+    renderDias_P(); // al menos mostrar lo que ya hay en memoria
+    if (estado) { estado.textContent = 'Sin conexión — no se pudo cargar tu programación guardada.'; estado.style.color = 'var(--alerta)'; }
   }
 }
 
