@@ -673,6 +673,15 @@ let EQUIPO = {}; // se llena dinámicamente desde la hoja "Equipo" del Sheet
 const ZONAS = [];
 const TEMAS = [];
 const DIAS = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+
+// Días de asueto — SOLO para mostrar un aviso en pantalla y evitar que se
+// programen actividades esos días. Esta lista vive únicamente aquí, en el
+// navegador: nunca se guarda ni se envía al servidor.
+const ASUETOS = new Set([
+  '2026-09-15', '2026-10-20', '2026-12-25', '2027-01-01',
+  '2027-03-25', '2027-03-26', '2027-03-27', '2027-05-01',
+  '2027-06-30', '2027-09-15', '2027-10-20', '2027-11-01', '2027-12-25',
+]);
 let diasData_P = DIAS.map(() => []);
 // Se pone en true mientras recuperarBorrador() está restaurando datos
 // locales, para que la carga automática del servidor no los sobreescriba.
@@ -858,31 +867,45 @@ function renderDias_P() {
     const card = document.createElement('div');
     card.className = 'dia-card';
 
+    const fechaDia = fechaPara_P(i);
+    const esAsueto = ASUETOS.has(fechaDia);
+
     const bar = document.createElement('div');
     bar.className = 'dia-bar';
-    bar.innerHTML = `<span>${i + 1}. ${nombre}</span><span class="fch">${fmtFechaDisplay(fechaPara_P(i))}</span>`;
+    bar.innerHTML = `<span>${i + 1}. ${nombre}</span><span class="fch">${fmtFechaDisplay(fechaDia)}</span>`;
     card.appendChild(bar);
+
+    if (esAsueto) {
+      const aviso = document.createElement('div');
+      aviso.style.cssText = 'background:#fbe9e2;border-top:1.5px solid var(--alerta);color:var(--alerta);padding:9px 14px;font-size:13px;font-weight:700;text-align:center;';
+      aviso.textContent = '🎉 Asueto — no se debe programar actividades este día';
+      card.appendChild(aviso);
+    }
 
     const holder = document.createElement('div');
     holder.id = `rows-${i}`;
     if (diasData_P[i].length === 0) {
       const e = document.createElement('div');
       e.className = 'empty-day';
-      e.textContent = 'Sin actividades — usa el botón de abajo para agregar.';
+      e.textContent = esAsueto
+        ? 'Día de asueto — no hay actividades programadas.'
+        : 'Sin actividades — usa el botón de abajo para agregar.';
       holder.appendChild(e);
     } else {
       diasData_P[i].forEach(act => holder.appendChild(crearFilaAct(i, act)));
     }
     card.appendChild(holder);
 
-    const addDiv = document.createElement('div');
-    addDiv.className = 'add-row';
-    const addBtn = document.createElement('button');
-    addBtn.type = 'button';
-    addBtn.textContent = '+ Agregar actividad';
-    addBtn.onclick = () => agregarAct(i);
-    addDiv.appendChild(addBtn);
-    card.appendChild(addDiv);
+    if (!esAsueto) {
+      const addDiv = document.createElement('div');
+      addDiv.className = 'add-row';
+      const addBtn = document.createElement('button');
+      addBtn.type = 'button';
+      addBtn.textContent = '+ Agregar actividad';
+      addBtn.onclick = () => agregarAct(i);
+      addDiv.appendChild(addBtn);
+      card.appendChild(addDiv);
+    }
     wrap.appendChild(card);
   });
   actualizarResumen_P();
