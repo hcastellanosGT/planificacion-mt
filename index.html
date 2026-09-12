@@ -484,9 +484,9 @@ table.det tr:hover td{background:#faf6ef;}
           </div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
-          <button class="btn btn-ghost" onclick="presetCumplimiento('anterior')">Semana pasada</button>
-          <button class="btn btn-ghost" onclick="presetCumplimiento('4semanas')">Últimas 4 semanas</button>
-          <button class="btn btn-ghost" onclick="presetCumplimiento('zafra')">Toda la zafra</button>
+          <button class="btn btn-ghost" id="btnPresetAnterior" onclick="presetCumplimiento('anterior')">Semana pasada</button>
+          <button class="btn btn-ghost" id="btnPreset4Semanas" onclick="presetCumplimiento('4semanas')">Últimas 4 semanas</button>
+          <button class="btn btn-ghost" id="btnPresetZafra" onclick="presetCumplimiento('zafra')">Toda la zafra</button>
         </div>
       </div>
       <p id="estadoCargaC" style="font-size:12px;color:var(--texto-suave);margin-bottom:14px;"></p>
@@ -2488,7 +2488,7 @@ function generarListaSemanasCumplimiento(){
     semanas.push({
       zafra, semana: numSemana,
       valor: zafra + '|' + numSemana,
-      etiqueta: `Semana ${numSemana} · ${fmt(cursor)}–${fmt(domingo)}`
+      etiqueta: `Semana ${numSemana} · ${fmt(cursor)} al ${fmt(domingo)}`
     });
     cursor.setDate(cursor.getDate() + 7);
   }
@@ -2507,6 +2507,11 @@ function poblarSelectoresCumplimiento(){
   const n = semanas.length;
   selD.value = semanas[Math.max(0, n - 4)].valor;
   selH.value = semanas[n - 1].valor;
+  actualizarBotonesPresetActivos();
+  // Si el usuario cambia Desde/Hasta manualmente, se re-evalúa cuál (si
+  // alguno) de los tres botones de preset sigue coincidiendo.
+  selD.addEventListener('change', actualizarBotonesPresetActivos);
+  selH.addEventListener('change', actualizarBotonesPresetActivos);
 }
 
 // Llena el filtro "Responsable" con la lista del equipo. Se carga por su
@@ -2541,7 +2546,38 @@ function presetCumplimiento(tipo){
     selD.value = semanas[0].valor;
     selH.value = semanas[n - 1].valor;
   }
+  actualizarBotonesPresetActivos();
   cargarCumplimiento();
+}
+
+// Resalta el botón de preset (Semana pasada / Últimas 4 / Toda la zafra) que
+// coincide con la selección actual de Desde/Hasta — si no coincide con
+// ninguno (el usuario eligió un rango manual), ninguno queda marcado.
+function actualizarBotonesPresetActivos(){
+  const semanas = generarListaSemanasCumplimiento();
+  const n = semanas.length;
+  const selD = document.getElementById('selCumpDesde');
+  const selH = document.getElementById('selCumpHasta');
+  if (!n || !selD || !selH) return;
+
+  const valorAnterior  = semanas[n - 1].valor;
+  const valor4Inicio   = semanas[Math.max(0, n - 4)].valor;
+  const valorZafraIni  = semanas[0].valor;
+  const terminaEnUltima = selH.value === valorAnterior;
+
+  const esAnterior  = terminaEnUltima && selD.value === valorAnterior;
+  const es4Semanas  = terminaEnUltima && selD.value === valor4Inicio && !esAnterior;
+  const esZafra     = terminaEnUltima && selD.value === valorZafraIni && !esAnterior && !es4Semanas;
+
+  const marcar = (id, activo) => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.classList.toggle('btn-primary', activo);
+    btn.classList.toggle('btn-ghost', !activo);
+  };
+  marcar('btnPresetAnterior', esAnterior);
+  marcar('btnPreset4Semanas', es4Semanas);
+  marcar('btnPresetZafra', esZafra);
 }
 
 async function cargarCumplimiento(){
