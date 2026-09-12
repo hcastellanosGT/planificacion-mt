@@ -888,7 +888,7 @@ function renderDias_P() {
       const e = document.createElement('div');
       e.className = 'empty-day';
       e.textContent = esAsueto
-        ? 'Día de asueto — no hay actividades programadas.'
+        ? 'Día de asueto — agrega una actividad solo si estás de turno.'
         : 'Sin actividades — usa el botón de abajo para agregar.';
       holder.appendChild(e);
     } else {
@@ -896,16 +896,14 @@ function renderDias_P() {
     }
     card.appendChild(holder);
 
-    if (!esAsueto) {
-      const addDiv = document.createElement('div');
-      addDiv.className = 'add-row';
-      const addBtn = document.createElement('button');
-      addBtn.type = 'button';
-      addBtn.textContent = '+ Agregar actividad';
-      addBtn.onclick = () => agregarAct(i);
-      addDiv.appendChild(addBtn);
-      card.appendChild(addDiv);
-    }
+    const addDiv = document.createElement('div');
+    addDiv.className = 'add-row';
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.textContent = '+ Agregar actividad';
+    addBtn.onclick = () => agregarAct(i);
+    addDiv.appendChild(addBtn);
+    card.appendChild(addDiv);
     wrap.appendChild(card);
   });
   actualizarResumen_P();
