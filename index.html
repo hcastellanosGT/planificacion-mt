@@ -500,6 +500,7 @@ table.det tr:hover td{background:#faf6ef;}
               <tr>
                 <th style="text-align:left;">Responsable</th>
                 <th>Total</th>
+                <th>Sin seguimiento</th>
                 <th>Realizadas</th>
                 <th>Reprogramadas</th>
                 <th>Canceladas</th>
@@ -2612,10 +2613,14 @@ function renderCumplimiento(registros){
   const masCancela = [...lista].sort((a,b)=>b.Cancelada-a.Cancelada)[0];
   const masReprog  = [...lista].sort((a,b)=>b.Reprogramada-a.Reprogramada)[0];
   const masNoPlan  = [...lista].sort((a,b)=>b.noPlan-a.noPlan)[0];
+  const masSinSeg  = [...lista].sort((a,b)=>b.Planificado-a.Planificado)[0];
 
   const tarjetas = [
     { icono:'🏆', titulo:'Mayor cumplimiento', color:'#16A34A',
       nombre: mejor.nombre, dato:`${mejor.pct}% (${mejor.ejecutadas}/${mejor.total})` },
+    { icono:'🕐', titulo:'Más sin seguimiento', color:'#64748B',
+      nombre: masSinSeg.Planificado>0 ? masSinSeg.nombre : '—',
+      dato: masSinSeg.Planificado>0 ? `${masSinSeg.Planificado} sin revisar` : 'Nadie en el período' },
     { icono:'🔁', titulo:'Más reprograma', color:'#D97706',
       nombre: masReprog.Reprogramada>0 ? masReprog.nombre : '—',
       dato: masReprog.Reprogramada>0 ? `${masReprog.Reprogramada} reprogramada${masReprog.Reprogramada===1?'':'s'}` : 'Nadie en el período' },
@@ -2647,6 +2652,7 @@ function renderCumplimiento(registros){
     tr.innerHTML = `
       <td style="text-align:left;font-weight:600;">${escapeHtml(p.nombre)}<br><span style="font-size:10px;color:var(--texto-suave);font-weight:400;">${escapeHtml(p.depto)}</span></td>
       <td style="text-align:center;">${p.total}</td>
+      <td style="text-align:center;color:#64748B;font-weight:600;">${p.Planificado}</td>
       <td style="text-align:center;color:#16A34A;font-weight:600;">${p.Realizada}</td>
       <td style="text-align:center;color:#D97706;font-weight:600;">${p.Reprogramada}</td>
       <td style="text-align:center;color:#DC2626;font-weight:600;">${p.Cancelada}</td>
