@@ -298,7 +298,7 @@ table.det tr:hover td{background:#faf6ef;}
   </div>
   <div style="margin-top:auto;">
     <a href="https://drive.google.com/file/d/1MpFPOIvE--SRVtSD1iHzIUmoY0Mla-xA/view?usp=sharing" target="_blank" rel="noopener" style="display:block;text-align:center;background:rgba(193,101,47,.15);border:1px solid var(--terracota,#c1652f);color:var(--terracota,#c1652f);text-decoration:none;font-weight:600;font-size:12px;padding:9px;margin:0 16px 12px;border-radius:8px;">📖 Leer manual de usuario</a>
-    <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 12/09/2026 · 09:04</span></div>
+    <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 13/09/2026 · 10:46</span></div>
   </div>
 </nav>
 
@@ -518,6 +518,12 @@ table.det tr:hover td{background:#faf6ef;}
         <div id="listaMotivosCumplimiento"></div>
         <div id="emptyMotivosCumplimiento" style="display:none;text-align:center;padding:24px;color:var(--texto-suave);font-size:13px;">No hay reprogramaciones ni cancelaciones en este rango.</div>
       </div>
+
+      <div class="card">
+        <h2>🗓️ Semanas sin planificar</h2>
+        <div id="listaSemanasSinPlanificar"></div>
+        <div id="emptySemanasSinPlanificar" style="display:none;text-align:center;padding:24px;color:var(--texto-suave);font-size:13px;">Todos planificaron todas sus semanas en este rango ✓</div>
+      </div>
     </div>
   </div>
 
@@ -602,7 +608,7 @@ function mostrarBloqueDomingo(contenedor) {
 
 
 
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyNVSvb3Zs4sTRTdBBRAb3eygky5GPjHtwhQIVWLO-SXSdp8M_USachHCnjA-lE9CMc_g/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyxs6ziz4ejJhVjSWl2OqKGmZK52s2l3acIvdFHvJXXA0D1jVTW9nIIrjcw3KcKWP5EbA/exec';
 
 // Variables globales compartidas
 let archivos = [];
@@ -2626,6 +2632,7 @@ async function cargarCumplimiento(){
 
     renderCumplimiento(registros);
     renderMotivosCumplimiento(registros);
+    cargarYRenderSemanasSinPlanificar(rango, filtroResp);
 
     const ahora = new Date().toLocaleString('es-GT');
     const est = document.getElementById('estadoCargaC');
@@ -2766,6 +2773,84 @@ function renderMotivosCumplimiento(registros){
       <div style="font-size:13px;margin-top:4px;color:${e.texto};font-style:italic;">"${escapeHtml(r.observacion) || 'Sin observación registrada'}"</div>`;
     cont.appendChild(div);
   });
+}
+
+// Compara el equipo activo contra las semanas del rango elegido, para
+// encontrar a quién le faltó planificar alguna semana por completo (ni
+// siquiera llegó a la ejecución). Respeta el filtro de responsable.
+async function cargarYRenderSemanasSinPlanificar(rango, filtroResp){
+  try {
+    const [resEquipo, resPlan] = await Promise.all([
+      fetch(WEB_APP_URL + '?modo=equipo&t=' + Date.now()),
+      fetch(WEB_APP_URL + '?modo=semanasPlanificadas&rango=' + encodeURIComponent(rango.map(s=>s.valor).join(',')) + '&t=' + Date.now()),
+    ]);
+    const dataEquipo = await resEquipo.json();
+    const dataPlan = await resPlan.json();
+    if (!dataEquipo.ok || !dataPlan.ok) return;
+
+    let personas = (dataEquipo.equipo || []).map(p => p.nombre);
+    if (filtroResp) personas = personas.filter(n => n === filtroResp);
+
+    const tienePlanificacion = new Set(dataPlan.combos || []);
+
+    const huecos = [];
+    personas.forEach(nombre => {
+      rango.forEach(s => {
+        if (!tienePlanificacion.has(nombre + '||' + s.valor)) {
+          huecos.push({ responsable: nombre, etiqueta: s.etiqueta });
+        }
+      });
+    });
+
+    renderSemanasSinPlanificar(huecos);
+  } catch(_) { /* si falla la comparación, simplemente no se muestra esta sección */ }
+}
+
+function renderSemanasSinPlanificar(huecos){
+  const cont  = document.getElementById('listaSemanasSinPlanificar');
+  const empty = document.getElementById('emptySemanasSinPlanificar');
+  cont.innerHTML = '';
+
+  // Tarjeta destacada — se agrega al mismo grid de tarjetas de Cumplimiento
+  const destacados = document.getElementById('destacadosC');
+  const tarjetaVieja = document.getElementById('tarjetaSemanasSinPlanificar');
+  if (tarjetaVieja) tarjetaVieja.remove();
+
+  const porPersona = {};
+  huecos.forEach(h => {
+    if (!porPersona[h.responsable]) porPersona[h.responsable] = [];
+    porPersona[h.responsable].push(h.etiqueta);
+  });
+
+  if (huecos.length && destacados) {
+    const [nombreTop, etiquetasTop] = Object.entries(porPersona).sort((a,b)=>b[1].length-a[1].length)[0];
+    const tarjeta = document.createElement('div');
+    tarjeta.id = 'tarjetaSemanasSinPlanificar';
+    tarjeta.className = 'card';
+    tarjeta.style.cssText = 'border-left:4px solid #0EA5E9;margin-bottom:0;';
+    tarjeta.innerHTML = `
+      <div style="font-size:11px;color:var(--texto-suave);text-transform:uppercase;letter-spacing:.05em;">📋 Más semanas sin planificar</div>
+      <div style="font-size:17px;font-weight:700;color:var(--cana-900);margin-top:6px;">${escapeHtml(nombreTop)}</div>
+      <div style="font-size:13px;color:#0EA5E9;font-weight:600;margin-top:2px;">${etiquetasTop.length} semana${etiquetasTop.length===1?'':'s'} sin planificar</div>`;
+    destacados.appendChild(tarjeta);
+  }
+
+  if (!huecos.length) {
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  Object.entries(porPersona)
+    .sort((a,b) => b[1].length - a[1].length)
+    .forEach(([nombre, etiquetas]) => {
+      const div = document.createElement('div');
+      div.style.cssText = 'border-left:3px solid #0EA5E9;background:#F0F9FF;border-radius:8px;padding:10px 14px;margin-bottom:8px;';
+      div.innerHTML = `
+        <div style="font-weight:700;color:var(--texto);">${escapeHtml(nombre)} <span style="font-weight:400;color:var(--texto-suave);font-size:12px;">(${etiquetas.length} semana${etiquetas.length===1?'':'s'})</span></div>
+        <div style="font-size:13px;color:#0369A1;margin-top:4px;">${etiquetas.map(escapeHtml).join(' · ')}</div>`;
+      cont.appendChild(div);
+    });
 }
 
 
