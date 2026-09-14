@@ -1678,7 +1678,6 @@ async function cargarPlanificacion(nombre){
     const data = await res.json();
     if(!data.ok) throw new Error(data.error);
     const misPersonas = (data.personas||[]).filter(p=>p.responsable===nombre);
-    if(!misPersonas.length){ showToast('No se encontró programación para '+nombre); return; }
 
     // Calcular el lunes de la semana actual en ejecución
     // (la semana que cerró el sábado pasado o que está en curso)
@@ -1692,11 +1691,27 @@ async function cargarPlanificacion(nombre){
       String(lunesActual.getMonth()+1).padStart(2,'0') + '-' +
       String(lunesActual.getDate()).padStart(2,'0');
 
-    // Buscar la persona con ese lunes exacto o la más reciente
-    const personaSemana = misPersonas.find(p => p.lunesFecha &&
-      String(p.lunesFecha).slice(0,10) === lunesISO);
-    const ultima = personaSemana || misPersonas.sort((a,b)=>Number(b.semana)-Number(a.semana))[0];
-    if (!ultima) { showToast('No se encontró programación'); return; }
+    let ultima;
+    if (!misPersonas.length) {
+      // No planificó esta semana — igual se le permite entrar a Ejecución
+      // para registrar actividades no planificadas (por ejemplo, si se le
+      // olvidó planificar pero sí trabajó). Se arma una base vacía con la
+      // semana y fecha correctas; el departamento se toma de "Equipo".
+      ultima = {
+        responsable: nombre,
+        departamento: EQUIPO_E[nombre] || '',
+        zafra: calcularZafra(lunesActual),
+        semana: String(semanaEjec),
+        lunesFecha: lunesISO,
+        actividades: [],
+      };
+      showToast('No planificaste esta semana — puedes registrar actividades no planificadas');
+    } else {
+      // Buscar la persona con ese lunes exacto o la más reciente
+      const personaSemana = misPersonas.find(p => p.lunesFecha &&
+        String(p.lunesFecha).slice(0,10) === lunesISO);
+      ultima = personaSemana || misPersonas.sort((a,b)=>Number(b.semana)-Number(a.semana))[0];
+    }
 
     // Verificar si ya tiene ejecución guardada para esta semana
     try {
@@ -2681,27 +2696,38 @@ function renderCumplimiento(registros){
   });
 
   // ── Destacados ────────────────────────────────────────────────────────────
-  const mejor      = [...lista].sort((a,b)=>b.pct-a.pct || b.total-a.total)[0];
-  const masCancela = [...lista].sort((a,b)=>b.Cancelada-a.Cancelada)[0];
-  const masReprog  = [...lista].sort((a,b)=>b.Reprogramada-a.Reprogramada)[0];
-  const masNoPlan  = [...lista].sort((a,b)=>b.noPlan-a.noPlan)[0];
-  const masSinSeg  = [...lista].sort((a,b)=>b.Planificado-a.Planificado)[0];
+  const ordCumplimiento = [...lista].sort((a,b)=>b.pct-a.pct || b.total-a.total);
+  const ordCancela      = [...lista].sort((a,b)=>b.Cancelada-a.Cancelada);
+  const ordReprog       = [...lista].sort((a,b)=>b.Reprogramada-a.Reprogramada);
+  const ordNoPlan       = [...lista].sort((a,b)=>b.noPlan-a.noPlan);
+  const ordSinSeg       = [...lista].sort((a,b)=>b.Planificado-a.Planificado);
+
+  const mejor      = ordCumplimiento[0];
+  const masCancela = ordCancela[0];
+  const masReprog  = ordReprog[0];
+  const masNoPlan  = ordNoPlan[0];
+  const masSinSeg  = ordSinSeg[0];
 
   const tarjetas = [
     { icono:'🏆', titulo:'Mayor cumplimiento', color:'#16A34A',
-      nombre: mejor.nombre, dato:`${mejor.pct}% (${mejor.ejecutadas}/${mejor.total})` },
+      nombre: mejor.nombre, dato:`${mejor.pct}% (${mejor.ejecutadas}/${mejor.total})`,
+      segundo: ordCumplimiento.length>1 ? `2º: ${ordCumplimiento[1].nombre} — ${ordCumplimiento[1].pct}%` : null },
     { icono:'🕐', titulo:'Más sin seguimiento', color:'#64748B',
       nombre: masSinSeg.Planificado>0 ? masSinSeg.nombre : '—',
-      dato: masSinSeg.Planificado>0 ? `${masSinSeg.Planificado} sin revisar` : 'Nadie en el período' },
+      dato: masSinSeg.Planificado>0 ? `${masSinSeg.Planificado} sin revisar` : 'Nadie en el período',
+      segundo: (ordSinSeg.length>1 && ordSinSeg[1].Planificado>0) ? `2º: ${ordSinSeg[1].nombre} — ${ordSinSeg[1].Planificado} sin revisar` : null },
     { icono:'🔁', titulo:'Más reprograma', color:'#D97706',
       nombre: masReprog.Reprogramada>0 ? masReprog.nombre : '—',
-      dato: masReprog.Reprogramada>0 ? `${masReprog.Reprogramada} reprogramada${masReprog.Reprogramada===1?'':'s'}` : 'Nadie en el período' },
+      dato: masReprog.Reprogramada>0 ? `${masReprog.Reprogramada} reprogramada${masReprog.Reprogramada===1?'':'s'}` : 'Nadie en el período',
+      segundo: (ordReprog.length>1 && ordReprog[1].Reprogramada>0) ? `2º: ${ordReprog[1].nombre} — ${ordReprog[1].Reprogramada} reprog.` : null },
     { icono:'❌', titulo:'Más cancela', color:'#DC2626',
       nombre: masCancela.Cancelada>0 ? masCancela.nombre : '—',
-      dato: masCancela.Cancelada>0 ? `${masCancela.Cancelada} cancelada${masCancela.Cancelada===1?'':'s'}` : 'Nadie en el período' },
+      dato: masCancela.Cancelada>0 ? `${masCancela.Cancelada} cancelada${masCancela.Cancelada===1?'':'s'}` : 'Nadie en el período',
+      segundo: (ordCancela.length>1 && ordCancela[1].Cancelada>0) ? `2º: ${ordCancela[1].nombre} — ${ordCancela[1].Cancelada} cancel.` : null },
     { icono:'✨', titulo:'Más no planificadas', color:'#7C3AED',
       nombre: masNoPlan.noPlan>0 ? masNoPlan.nombre : '—',
-      dato: masNoPlan.noPlan>0 ? `${masNoPlan.noPlan} no planificada${masNoPlan.noPlan===1?'':'s'}` : 'Nadie en el período' },
+      dato: masNoPlan.noPlan>0 ? `${masNoPlan.noPlan} no planificada${masNoPlan.noPlan===1?'':'s'}` : 'Nadie en el período',
+      segundo: (ordNoPlan.length>1 && ordNoPlan[1].noPlan>0) ? `2º: ${ordNoPlan[1].nombre} — ${ordNoPlan[1].noPlan} no plan.` : null },
   ];
 
   tarjetas.forEach(t => {
@@ -2711,7 +2737,8 @@ function renderCumplimiento(registros){
     div.innerHTML = `
       <div style="font-size:11px;color:var(--texto-suave);text-transform:uppercase;letter-spacing:.05em;">${t.icono} ${t.titulo}</div>
       <div style="font-size:17px;font-weight:700;color:var(--cana-900);margin-top:6px;">${escapeHtml(t.nombre)}</div>
-      <div style="font-size:13px;color:${t.color};font-weight:600;margin-top:2px;">${escapeHtml(t.dato)}</div>`;
+      <div style="font-size:13px;color:${t.color};font-weight:600;margin-top:2px;">${escapeHtml(t.dato)}</div>
+      ${t.segundo ? `<div style="font-size:10px;color:var(--texto-suave);margin-top:4px;">${escapeHtml(t.segundo)}</div>` : ''}`;
     cont.appendChild(div);
   });
 
@@ -2823,7 +2850,11 @@ function renderSemanasSinPlanificar(huecos){
   });
 
   if (huecos.length && destacados) {
-    const [nombreTop, etiquetasTop] = Object.entries(porPersona).sort((a,b)=>b[1].length-a[1].length)[0];
+    const ordenado = Object.entries(porPersona).sort((a,b)=>b[1].length-a[1].length);
+    const [nombreTop, etiquetasTop] = ordenado[0];
+    const segundo = ordenado.length > 1
+      ? `2º: ${ordenado[1][0]} — ${ordenado[1][1].length} semana${ordenado[1][1].length===1?'':'s'}`
+      : null;
     const tarjeta = document.createElement('div');
     tarjeta.id = 'tarjetaSemanasSinPlanificar';
     tarjeta.className = 'card';
@@ -2831,7 +2862,8 @@ function renderSemanasSinPlanificar(huecos){
     tarjeta.innerHTML = `
       <div style="font-size:11px;color:var(--texto-suave);text-transform:uppercase;letter-spacing:.05em;">📋 Más semanas sin planificar</div>
       <div style="font-size:17px;font-weight:700;color:var(--cana-900);margin-top:6px;">${escapeHtml(nombreTop)}</div>
-      <div style="font-size:13px;color:#0EA5E9;font-weight:600;margin-top:2px;">${etiquetasTop.length} semana${etiquetasTop.length===1?'':'s'} sin planificar</div>`;
+      <div style="font-size:13px;color:#0EA5E9;font-weight:600;margin-top:2px;">${etiquetasTop.length} semana${etiquetasTop.length===1?'':'s'} sin planificar</div>
+      ${segundo ? `<div style="font-size:10px;color:var(--texto-suave);margin-top:4px;">${escapeHtml(segundo)}</div>` : ''}`;
     destacados.appendChild(tarjeta);
   }
 
