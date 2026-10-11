@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sistema Agrícola — Madre Tierra</title>
-<style>:root{--sidebar-w:220px;--cana-900:#1d3322;--cana-700:#2f5233;--cana-500:#4a7a45;--cana-300:#8fb583;--terracota:#c1652f;--terracota-dark:#9c4d22;--terracota-light:#f0d9c4;--crema:#f6f1e7;--crema-card:#fffdf8;--linea:#e2d8c3;--texto:#2b241c;--texto-suave:#6b5e4c;--alerta:#b3451f;--font-body:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--font-mono:"JetBrains Mono","SF Mono",Consolas,monospace;--e-plan:#EFF6FF;--e-plan-b:#3B82F6;--e-plan-t:#1E3A8A;--e-real:#F0FDF4;--e-real-b:#22C55E;--e-real-t:#14532D;--e-repr:#FFFBEB;--e-repr-b:#F59E0B;--e-repr-t:#78350F;--e-canc:#FFF1F2;--e-canc-b:#F43F5E;--e-canc-t:#881337;--e-nopl:#F5F3FF;--e-nopl-b:#8B5CF6;--e-nopl-t:#4C1D95;}
+<style>:root{--sidebar-w:220px;--cana-900:#1d3322;--cana-700:#2f5233;--cana-500:#4a7a45;--cana-300:#8fb583;--terracota:#c1652f;--terracota-dark:#9c4d22;--terracota-light:#f0d9c4;--crema:#f6f1e7;--crema-card:#fffdf8;--linea:#e2d8c3;--texto:#2b241c;--texto-suave:#6b5e4c;--alerta:#b3451f;--font-body:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--font-mono:"JetBrains Mono","SF Mono",Consolas,monospace;--e-plan:#eeeee9;--e-plan-b:#b3b3b3;--e-plan-t:#444444;--e-real:#e6f4cf;--e-real-b:#1c3a13;--e-real-t:#1c3a13;--e-repr:#f1eed3;--e-repr-b:#9f995b;--e-repr-t:#5a5528;--e-canc:#f3e0d8;--e-canc-b:#9a3b1c;--e-canc-t:#7a2c14;--e-nopl:#e1ebe4;--e-nopl-b:#698e79;--e-nopl-t:#2f4d3c;}
 *{box-sizing:border-box;}
 body{margin:0;background:var(--crema);color:var(--texto);font-family:var(--font-body);-webkit-font-smoothing:antialiased;}
 /* LAYOUT */
@@ -117,7 +117,7 @@ select:focus{outline:none;border-color:var(--terracota);}
 .act-nom{font-size:13px;font-weight:600;color:var(--texto);line-height:1.3;}
 .act-tags{margin-top:4px;}
 .act-tag{margin-top:2px;display:inline-block;font-size:9.5px;font-family:var(--font-mono);padding:1px 5px;border-radius:3px;background:#eee5d0;color:#6b5e4c;margin-right:3px;}
-.noplan-badge{font-size:9px;background:#F5F3FF;color:#6D28D9;padding:1px 6px;border-radius:4px;font-family:var(--font-mono);margin-left:2px;vertical-align:middle;}
+.noplan-badge{font-size:9px;background:#e1ebe4;color:#2f4d3c;padding:1px 6px;border-radius:4px;font-family:var(--font-mono);margin-left:2px;vertical-align:middle;}
 /* fila de estado + observación */
 .act-ctrl{padding:10px 12px;border-top:1px solid var(--linea);display:flex;flex-direction:column;gap:8px;}
 @media(max-width:520px){.act-ctrl{grid-template-columns:1fr;}}
@@ -137,14 +137,14 @@ select:focus{outline:none;border-color:var(--terracota);}
 .foto-rm{background:none;border:none;color:var(--alerta);cursor:pointer;font-size:13px;font-weight:700;padding:2px 5px;line-height:1;}
 .foto-input{display:none;}
 /* no planificada */
-.noplan-wrap .act-card{border-color:#8B5CF6;border-style:dashed;}
+.noplan-wrap .act-card{border-color:#698e79;border-style:dashed;}
 .noplan-wrap .act-top{background:#faf8ff;}
 /* agregar no planificada */
 .add-noplan{margin:8px 12px 12px;}
-.add-noplan button{font-size:12px;padding:7px 12px;background:var(--crema);border:1.5px dashed #8B5CF6;color:#6D28D9;border-radius:8px;cursor:pointer;transition:background .15s;}
-.add-noplan button:hover{background:#F5F3FF;}
+.add-noplan button{font-size:12px;padding:7px 12px;background:var(--crema);border:1.5px dashed #698e79;color:#2f4d3c;border-radius:8px;cursor:pointer;transition:background .15s;}
+.add-noplan button:hover{background:#e1ebe4;}
 /* form nueva actividad */
-.nueva-form{margin:6px 12px;border:1.5px dashed #8B5CF6;border-radius:8px;padding:12px;background:#F5F3FF;}
+.nueva-form{margin:6px 12px;border:1.5px dashed #698e79;border-radius:8px;padding:12px;background:#e1ebe4;}
 .nueva-grid{display:grid;grid-template-columns:90px 1fr 1fr;gap:8px;margin-bottom:8px;}
 @media(max-width:520px){.nueva-grid{grid-template-columns:1fr;}}
 .nueva-grid select,.nueva-inp{appearance:none;width:100%;padding:8px 10px;border:1.5px solid #c4b5fd;border-radius:8px;background:#fff;font-family:var(--font-body);font-size:13px;}
@@ -270,6 +270,115 @@ table.det tr:hover td{background:#faf6ef;}
 @keyframes load{0%{transform:translateX(-100%)}100%{transform:translateX(400%)}}
 /* Accesibilidad: indicador de foco al navegar con teclado */
 .btn:focus-visible,.nav-item:focus-visible,.tab:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(193,101,47,.45);}
+
+/* ===== TEMA "SEED" — botánico-clínico: plano, sin sombras, sin degradados ===== */
+:root{
+  --forest:#1c3a13; --lime:#d3fa99; --sage:#757c5d; --olive:#9f995b; --euca:#698e79;
+  --snow:#fcfcf7; --stone:#eeeee9; --frost:#c4c7c4; --ash:#b3b3b3; --pewter:#666666;
+  /* remapeo de las variables existentes */
+  --cana-900:#1c3a13; --cana-700:#1c3a13; --cana-500:#698e79; --cana-300:#b9d3a3;
+  --terracota:#1c3a13; --terracota-dark:#1c3a13; --terracota-light:#eeeee9;
+  --crema:#fcfcf7; --crema-card:#fcfcf7; --linea:#dcdcd4;
+  --texto:#1c3a13; --texto-suave:#666666; --alerta:#9a3b1c;
+  --font-body:"Inter","Seed Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"JetBrains Mono","IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+body{background:var(--snow);color:var(--forest);}
+*{box-shadow:none!important;}
+/* Barra lateral */
+.sidebar{background:var(--forest);}
+.sidebar-logo{border-bottom:1px solid rgba(252,252,247,.14);}
+.sidebar-logo h2{font-weight:400;letter-spacing:-.18px;font-size:16px;}
+.eyebrow,.sidebar-logo .eyebrow{color:var(--lime);letter-spacing:.14em;}
+.nav-label{color:rgba(252,252,247,.45);}
+.nav-item{border-radius:1000px;color:rgba(252,252,247,.78);font-weight:400;padding:10px 14px;}
+.nav-item:hover{background:rgba(252,252,247,.10);color:var(--snow);}
+.nav-item.active{background:var(--snow);color:var(--forest);font-weight:500;}
+.sidebar-footer{border-top:1px solid rgba(252,252,247,.14);color:rgba(252,252,247,.5);}
+/* Encabezado de página: plano, sin degradado ni círculo */
+.top{background:var(--snow)!important;color:var(--forest);padding:40px 24px 56px;border-bottom:1px solid var(--linea);}
+.top::after{display:none;}
+.top .eyebrow{color:var(--sage);}
+h1{font-weight:300;font-size:clamp(30px,4.2vw,48px);letter-spacing:-.72px;line-height:1.1;color:var(--forest);}
+.top p.sub{color:var(--pewter);font-size:16px;max-width:560px;}
+#metaSemana{color:var(--pewter);}
+.top .btn-ghost{border-color:var(--forest)!important;color:var(--forest)!important;}
+.wrap{margin-top:-24px;}
+/* Tarjetas */
+.card{background:var(--stone);border:none;border-radius:16px;padding:24px;}
+.card h2{font-weight:400;font-size:20px;letter-spacing:-.3px;}
+.card h2 .num,.num{background:var(--forest);color:var(--snow);}
+.stat{background:var(--stone);border:none;border-radius:16px;padding:18px 20px;}
+.stat .val{font-weight:300;font-size:36px;color:var(--forest);letter-spacing:-.4px;}
+.stat .lbl{color:var(--pewter);}
+/* Botones: píldora */
+.btn{border-radius:1000px;font-weight:400;font-size:14px;padding:12px 22px;}
+.btn-primary{background:var(--forest);color:var(--snow);}
+.btn-primary:hover{background:#2b5120;}
+.btn-primary:disabled{background:var(--ash);}
+.btn-ghost{background:var(--snow);color:var(--forest);border:1.5px solid var(--forest);}
+.btn-ghost:hover{background:var(--forest);color:var(--snow);}
+.btn-sm{padding:8px 14px;}
+/* Campos */
+input[type=text],input[type=date],input[type=time],select,textarea,.obs-inp,.filtro-group input,.filtro-group select,.filtros select{
+  background:var(--snow);border:1.5px solid var(--frost);border-radius:8px;color:var(--forest);}
+input:focus,select:focus,textarea:focus,.obs-inp:focus{border-color:var(--forest);box-shadow:none;outline:2px solid var(--lime);outline-offset:1px;}
+input[readonly],input[disabled]{background:var(--stone);color:var(--pewter);}
+label,.field label,.filtro-group label{color:var(--pewter);font-weight:500;}
+/* Días / actividades */
+.dia-card{border:none;border-radius:16px;background:var(--snow);}
+.dia-bar{background:var(--forest);color:var(--snow);font-weight:400;letter-spacing:-.2px;}
+.dia-bar .fch{color:var(--lime);font-weight:400;}
+.dia-prog{background:var(--stone);} .dia-prog-fill{background:var(--lime);}
+.act-card{border-radius:12px;border-color:var(--frost);}
+.act-top{background:var(--snow);}
+.hora-badge{background:var(--forest)!important;border-radius:1000px;padding:3px 10px;font-weight:500;}
+.act-tag{background:var(--stone);border-radius:1000px;padding:2px 8px;color:var(--pewter);}
+.act-foto{background:var(--stone);}
+.est-btn{border-radius:1000px;}
+.est-btn:not(.active){background:var(--snow);}
+.noplan-wrap .act-card{border-color:var(--sage);} .noplan-wrap .act-top{background:#f3f4ea;}
+.noplan-badge{background:var(--lime);color:var(--forest);border-radius:1000px;}
+.add-row button,.add-noplan button{border-radius:1000px;background:var(--snow);border:1.5px dashed var(--sage);color:var(--forest);}
+.nueva-form{background:#f3f4ea;border-color:var(--sage);border-radius:12px;}
+/* Avisos y chips */
+.banner-cierre.abierto{background:var(--lime);border:none;color:var(--forest);border-radius:12px;}
+.banner-cierre.cerrado{background:#f1ddd3;border:none;color:var(--alerta);border-radius:12px;}
+.meta-pill,.si-pill{background:var(--forest);color:var(--lime);border-radius:1000px;}
+.semana-info{background:var(--snow);border:1.5px solid var(--forest);border-radius:12px;}
+.si-txt{color:var(--forest);}
+.res-pill,.mini-pill,.est-pill,.pers-stat,.tag-depto{border-radius:1000px;}
+.tag-depto,.dept-tag{background:var(--forest)!important;color:var(--snow)!important;border-radius:1000px;}
+/* Tablas y calendario */
+.cal-matrix th,table.det th,table.res th{font-weight:500;}
+.cal-matrix th{background:var(--forest);border-color:rgba(252,252,247,.18);}
+.cal-matrix td{border-color:var(--linea);}
+.cal-matrix .cal-dia-col{background:var(--stone);border-right:2px solid var(--forest);}
+.cal-chip{background:var(--snow);border-left:3px solid var(--forest);border-radius:6px;}
+.day-head,.semana-head{background:var(--forest);}
+.slot{background:var(--snow);border-left:3px solid var(--forest);}
+.slot .hora{color:var(--forest);}
+table.det tr:hover td{background:var(--snow);}
+.semana-row,.pers-card,.day-col{border-color:var(--linea);border-radius:16px;background:var(--snow);}
+.bar-track,.pct-bar{background:var(--snow);border-radius:1000px;}
+.bar-fill,.pct-fill{border-radius:1000px;}
+.tabs{border-bottom-color:var(--frost);}
+.tab.active{background:var(--forest);border-radius:1000px;}
+.toast{background:var(--forest);border-radius:1000px;}
+.loading-fill{background:var(--forest);} .spinner{border-top-color:var(--forest);}
+.hint,.resumen,.res-txt{color:var(--pewter);} .resumen b,.res-txt b{color:var(--forest);}
+/* Colores de estado (suaves, dentro de la familia botánica) */
+:root{
+  --e-plan:#eeeee9; --e-plan-b:#b3b3b3; --e-plan-t:#444444;
+  --e-real:#e6f4cf; --e-real-b:#1c3a13; --e-real-t:#1c3a13;
+  --e-repr:#f1eed3; --e-repr-b:#9f995b; --e-repr-t:#5a5528;
+  --e-canc:#f3e0d8; --e-canc-b:#9a3b1c; --e-canc-t:#7a2c14;
+  --e-nopl:#e1ebe4; --e-nopl-b:#698e79; --e-nopl-t:#2f4d3c;
+}
+.sidebar a[href*="drive.google"]{background:rgba(252,252,247,.12)!important;color:var(--snow)!important;border:1px solid rgba(252,252,247,.3)!important;border-radius:1000px!important;}
+.filtros select{width:auto;min-width:230px;}
+.filtros{align-items:center;}
+
 </style>
 </head>
 <body>
@@ -298,7 +407,7 @@ table.det tr:hover td{background:#faf6ef;}
   </div>
   <div style="margin-top:auto;">
     <a href="https://drive.google.com/file/d/1MpFPOIvE--SRVtSD1iHzIUmoY0Mla-xA/view?usp=sharing" target="_blank" rel="noopener" style="display:block;text-align:center;background:rgba(193,101,47,.15);border:1px solid var(--terracota,#c1652f);color:var(--terracota,#c1652f);text-decoration:none;font-weight:600;font-size:12px;padding:9px;margin:0 16px 12px;border-radius:8px;">📖 Leer manual de usuario</a>
-    <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 09/10/2026 · 19:20</span></div>
+    <div class="sidebar-footer">Sistema de Planificación<br>División Agrícola MT<br><span id="footerHora"></span><br><br>Desarrollado por<br><b style="color:rgba(255,255,255,.5);">Hugo Castellanos</b><br><span style="font-size:9px;color:rgba(255,255,255,.35);">Última versión: 11/10/2026 · 09:15</span></div>
   </div>
 </nav>
 
@@ -1596,12 +1705,12 @@ const TEMAS_E = [];
 // Estados disponibles para actividades planificadas
 // Estados con colores sólidos para botones activos
 const ESTADOS_PLAN = [
-  {val:'Planificado',  bg:'#EFF6FF', border:'#3B82F6', txt:'#1E3A8A', solid:'#3B82F6'},
-  {val:'Realizada',    bg:'#F0FDF4', border:'#16A34A', txt:'#14532D', solid:'#16A34A'},
-  {val:'Reprogramada', bg:'#FFFBEB', border:'#D97706', txt:'#78350F', solid:'#D97706'},
-  {val:'Cancelada',    bg:'#FFF1F2', border:'#DC2626', txt:'#881337', solid:'#DC2626'},
+  {val:'Planificado',  bg:'#eeeee9', border:'#b3b3b3', txt:'#444444', solid:'#b3b3b3'},
+  {val:'Realizada',    bg:'#e6f4cf', border:'#1c3a13', txt:'#1c3a13', solid:'#1c3a13'},
+  {val:'Reprogramada', bg:'#f1eed3', border:'#9f995b', txt:'#5a5528', solid:'#9f995b'},
+  {val:'Cancelada',    bg:'#f3e0d8', border:'#9a3b1c', txt:'#7a2c14', solid:'#9a3b1c'},
 ];
-const EST_NOPLAN = {val:'No planificada',bg:'#F5F3FF',border:'#7C3AED',txt:'#4C1D95',solid:'#7C3AED'};
+const EST_NOPLAN = {val:'No planificada',bg:'#e1ebe4',border:'#698e79',txt:'#2f4d3c',solid:'#698e79'};
 
 function estilo(v){
   if(v==='No planificada') return EST_NOPLAN;
@@ -2066,9 +2175,9 @@ function actualizarResumen_E(){
   diasData_E.forEach(d=>d.forEach(a=>{ if(c[a.estado]!==undefined) c[a.estado]++; }));
   const total=Object.values(c).reduce((s,v)=>s+v,0);
   const colores={
-    Planificado:'#EFF6FF|#3B82F6|#1E3A8A', Realizada:'#F0FDF4|#22C55E|#14532D',
-    Reprogramada:'#FFFBEB|#F59E0B|#78350F', Cancelada:'#FFF1F2|#F43F5E|#881337',
-    'No planificada':'#F5F3FF|#8B5CF6|#4C1D95'
+    Planificado:'#eeeee9|#b3b3b3|#444444', Realizada:'#e6f4cf|#1c3a13|#1c3a13',
+    Reprogramada:'#f1eed3|#9f995b|#5a5528', Cancelada:'#f3e0d8|#9a3b1c|#7a2c14',
+    'No planificada':'#e1ebe4|#698e79|#2f4d3c'
   };
   const bar=document.getElementById('resBar'); bar.innerHTML='';
   Object.entries(c).forEach(([k,v])=>{
@@ -2243,15 +2352,8 @@ async function guardarEnLaNube_E(esReintento){
 const DIAS_D = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 
 // Colores por departamento
-const COLORES_DEPTO = {
-  'Malezas y Madurantes' : '#4a7a45',
-  'Mecanización'         : '#c1652f',
-  'Investigación'        : '#3a6ea5',
-  'Riego'                : '#2077b4',
-  'SIG'                  : '#7a4f9c',
-  'Subgerencia de Producción' : '#9c4d22',
-};
-function colorDepto(d){ return COLORES_DEPTO[d] || '#6b5e4c'; }
+const COLORES_DEPTO = {'Malezas y Madurantes':'#1c3a13','Mecanización':'#757c5d','Investigación':'#698e79','Riego':'#9f995b','SIG':'#4d6b3f','Subgerencia de Producción':'#2f5224'};
+function colorDepto(d){ return COLORES_DEPTO[d] || '#1c3a13'; }
 
 async function actualizar(){
   if(WEB_APP_URL === 'PEGA_AQUI_TU_URL'){
@@ -2483,10 +2585,10 @@ const DEPT_COLOR = {
 };
 const EST_COLOR = {
   'Planificado'  :'var(--e-plan-b)',
-  'Realizada'    :'#22C55E',
-  'Reprogramada' :'#F59E0B',
-  'Cancelada'    :'#F43F5E',
-  'No planificada':'#8B5CF6',
+  'Realizada'    :'#1c3a13',
+  'Reprogramada' :'#9f995b',
+  'Cancelada'    :'#9a3b1c',
+  'No planificada':'#698e79',
 };
 const EST_STYLE = {
   'Planificado'  :{bg:'var(--e-plan)',b:'var(--e-plan-b)',t:'var(--e-plan-t)'},
@@ -2709,22 +2811,22 @@ function renderCumplimiento(registros){
   const masSinSeg  = ordSinSeg[0];
 
   const tarjetas = [
-    { icono:'🏆', titulo:'Mayor cumplimiento', color:'#16A34A',
+    { icono:'🏆', titulo:'Mayor cumplimiento', color:'#1c3a13',
       nombre: mejor.nombre, dato:`${mejor.pct}% (${mejor.ejecutadas}/${mejor.total})`,
       segundo: ordCumplimiento.length>1 ? `2º: ${ordCumplimiento[1].nombre} — ${ordCumplimiento[1].pct}%` : null },
-    { icono:'🕐', titulo:'Más sin seguimiento', color:'#64748B',
+    { icono:'🕐', titulo:'Más sin seguimiento', color:'#666666',
       nombre: masSinSeg.Planificado>0 ? masSinSeg.nombre : '—',
       dato: masSinSeg.Planificado>0 ? `${masSinSeg.Planificado} sin revisar` : 'Nadie en el período',
       segundo: (ordSinSeg.length>1 && ordSinSeg[1].Planificado>0) ? `2º: ${ordSinSeg[1].nombre} — ${ordSinSeg[1].Planificado} sin revisar` : null },
-    { icono:'🔁', titulo:'Más reprograma', color:'#D97706',
+    { icono:'🔁', titulo:'Más reprograma', color:'#9f995b',
       nombre: masReprog.Reprogramada>0 ? masReprog.nombre : '—',
       dato: masReprog.Reprogramada>0 ? `${masReprog.Reprogramada} reprogramada${masReprog.Reprogramada===1?'':'s'}` : 'Nadie en el período',
       segundo: (ordReprog.length>1 && ordReprog[1].Reprogramada>0) ? `2º: ${ordReprog[1].nombre} — ${ordReprog[1].Reprogramada} reprog.` : null },
-    { icono:'❌', titulo:'Más cancela', color:'#DC2626',
+    { icono:'❌', titulo:'Más cancela', color:'#9a3b1c',
       nombre: masCancela.Cancelada>0 ? masCancela.nombre : '—',
       dato: masCancela.Cancelada>0 ? `${masCancela.Cancelada} cancelada${masCancela.Cancelada===1?'':'s'}` : 'Nadie en el período',
       segundo: (ordCancela.length>1 && ordCancela[1].Cancelada>0) ? `2º: ${ordCancela[1].nombre} — ${ordCancela[1].Cancelada} cancel.` : null },
-    { icono:'✨', titulo:'Más no planificadas', color:'#7C3AED',
+    { icono:'✨', titulo:'Más no planificadas', color:'#698e79',
       nombre: masNoPlan.noPlan>0 ? masNoPlan.nombre : '—',
       dato: masNoPlan.noPlan>0 ? `${masNoPlan.noPlan} no planificada${masNoPlan.noPlan===1?'':'s'}` : 'Nadie en el período',
       segundo: (ordNoPlan.length>1 && ordNoPlan[1].noPlan>0) ? `2º: ${ordNoPlan[1].nombre} — ${ordNoPlan[1].noPlan} no plan.` : null },
@@ -2746,16 +2848,16 @@ function renderCumplimiento(registros){
   lista.sort((a,b)=>b.pct-a.pct || b.total-a.total);
   lista.forEach((p, i) => {
     const tr = document.createElement('tr');
-    const pctColor = p.pct>=80 ? '#16A34A' : p.pct>=50 ? '#D97706' : '#DC2626';
+    const pctColor = p.pct>=80 ? '#1c3a13' : p.pct>=50 ? '#9f995b' : '#9a3b1c';
     tr.style.background = i%2 ? 'var(--crema, #f7f3ea)' : '#fff';
     tr.innerHTML = `
       <td style="text-align:left;font-weight:600;">${escapeHtml(p.nombre)}<br><span style="font-size:10px;color:var(--texto-suave);font-weight:400;">${escapeHtml(p.depto)}</span></td>
       <td style="text-align:center;">${p.total}</td>
-      <td style="text-align:center;color:#64748B;font-weight:600;">${p.Planificado}</td>
-      <td style="text-align:center;color:#16A34A;font-weight:600;">${p.Realizada}</td>
-      <td style="text-align:center;color:#D97706;font-weight:600;">${p.Reprogramada}</td>
-      <td style="text-align:center;color:#DC2626;font-weight:600;">${p.Cancelada}</td>
-      <td style="text-align:center;color:#7C3AED;font-weight:600;">${p.noPlan}</td>
+      <td style="text-align:center;color:#666666;font-weight:600;">${p.Planificado}</td>
+      <td style="text-align:center;color:#1c3a13;font-weight:600;">${p.Realizada}</td>
+      <td style="text-align:center;color:#9f995b;font-weight:600;">${p.Reprogramada}</td>
+      <td style="text-align:center;color:#9a3b1c;font-weight:600;">${p.Cancelada}</td>
+      <td style="text-align:center;color:#698e79;font-weight:600;">${p.noPlan}</td>
       <td style="text-align:center;font-weight:700;color:${pctColor};">${p.pct}%</td>`;
     tbody.appendChild(tr);
   });
@@ -2780,8 +2882,8 @@ function renderMotivosCumplimiento(registros){
   empty.style.display = 'none';
 
   const estilos = {
-    'Reprogramada': { borde:'#D97706', fondo:'#FFFBEB', badge:'#D97706', texto:'#78350F' },
-    'Cancelada'   : { borde:'#DC2626', fondo:'#FFF1F2', badge:'#DC2626', texto:'#881337' },
+    'Reprogramada': { borde:'#9f995b', fondo:'#f1eed3', badge:'#9f995b', texto:'#5a5528' },
+    'Cancelada'   : { borde:'#9a3b1c', fondo:'#f3e0d8', badge:'#9a3b1c', texto:'#7a2c14' },
   };
 
   motivos.forEach(r => {
@@ -2870,11 +2972,11 @@ function renderSemanasSinPlanificar(huecos){
     const tarjeta = document.createElement('div');
     tarjeta.id = 'tarjetaSemanasSinPlanificar';
     tarjeta.className = 'card';
-    tarjeta.style.cssText = 'border-left:4px solid #0EA5E9;margin-bottom:0;';
+    tarjeta.style.cssText = 'border-left:4px solid #757c5d;margin-bottom:0;';
     tarjeta.innerHTML = `
       <div style="font-size:11px;color:var(--texto-suave);text-transform:uppercase;letter-spacing:.05em;">📋 Más semanas sin planificar</div>
       <div style="font-size:17px;font-weight:700;color:var(--cana-900);margin-top:6px;">${escapeHtml(nombreTop)}</div>
-      <div style="font-size:13px;color:#0EA5E9;font-weight:600;margin-top:2px;">${etiquetasTop.length} semana${etiquetasTop.length===1?'':'s'} sin planificar</div>
+      <div style="font-size:13px;color:#757c5d;font-weight:600;margin-top:2px;">${etiquetasTop.length} semana${etiquetasTop.length===1?'':'s'} sin planificar</div>
       ${segundo ? `<div style="font-size:10px;color:var(--texto-suave);margin-top:4px;">${escapeHtml(segundo)}</div>` : ''}`;
     destacados.appendChild(tarjeta);
   }
@@ -2889,10 +2991,10 @@ function renderSemanasSinPlanificar(huecos){
     .sort((a,b) => b[1].length - a[1].length)
     .forEach(([nombre, etiquetas]) => {
       const div = document.createElement('div');
-      div.style.cssText = 'border-left:3px solid #0EA5E9;background:#F0F9FF;border-radius:8px;padding:10px 14px;margin-bottom:8px;';
+      div.style.cssText = 'border-left:3px solid #757c5d;background:#f3f4ea;border-radius:8px;padding:10px 14px;margin-bottom:8px;';
       div.innerHTML = `
         <div style="font-weight:700;color:var(--texto);">${escapeHtml(nombre)} <span style="font-weight:400;color:var(--texto-suave);font-size:12px;">(${etiquetas.length} semana${etiquetas.length===1?'':'s'})</span></div>
-        <div style="font-size:13px;color:#0369A1;margin-top:4px;">${etiquetas.map(escapeHtml).join(' · ')}</div>`;
+        <div style="font-size:13px;color:#4f553c;margin-top:4px;">${etiquetas.map(escapeHtml).join(' · ')}</div>`;
       cont.appendChild(div);
     });
 }
